@@ -1,0 +1,23 @@
+- Color Palette
+
+/* CSS HEX */
+--beige: #ebebd3ff;
+--prussian-blue: #172a3aff;
+--penn-red: #95190cff;
+--dark-spring-green: #04724dff;
+--eerie-black: #191919ff;
+
+Done!
+
+- Frontend
+-------------------------
+- Auth Frontend - Done!
+- Dashboard - Done!
+- Extra pages - Done!
+- Profile page - Done!
+- Backend
+- User Auth - Done!
+- CRUD requests - Done(mostly)!
+- Integration
+- Polishing
+- Hosting
