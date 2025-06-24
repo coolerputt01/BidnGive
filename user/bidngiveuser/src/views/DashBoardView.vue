@@ -1,9 +1,95 @@
+<script setup>
+import { ref, onMounted , onUnmounted } from 'vue';
+import axios from 'axios';
+
+const username = ref('');
+const wallet = ref(0);
+const bids = ref(0);
+const countdown = ref('');
+const marketStatus = ref('closed');
+const nextAuctionTime = ref('');
+
+const walletUrl = "http://127.0.0.1:8000/api/wallet/balance";
+const bidsUrl = "http://127.0.0.1:8000/api/bids/";
+const auctionUrl = "http://127.0.0.1:8000/api/admin/auction/status/";
+
+let intervalId = null;
+
+async function fetchAuctionData() {
+  try {
+    const res = await axios.get(auctionUrl);
+    const seconds = res.data.remaining_seconds;
+    marketStatus.value = res.data.market_status;
+    nextAuctionTime.value = res.data.next_auction;
+    startCountdown(seconds);
+  } catch (err) {
+    console.error("Failed to fetch auction status", err);
+  }
+}
+
+function startCountdown(initialSeconds) {
+  let remaining = initialSeconds;
+
+  clearInterval(intervalId);
+
+  intervalId = setInterval(() => {
+    if (remaining <= 0) {
+      clearInterval(intervalId);
+      fetchAuctionData(); // Re-fetch on expiration
+      return;
+    }
+    const hrs = Math.floor(remaining / 3600);
+    const mins = Math.floor((remaining % 3600) / 60);
+    const secs = remaining % 60;
+    countdown.value = `${hrs}h :${mins}m :${secs}s`;
+    remaining -= 1;
+  }, 1000);
+}
+
+onMounted(async () => {
+  const storedUser = localStorage.getItem("userInfo");
+  const token = localStorage.getItem("access_token");
+
+  if (storedUser) {
+    try {
+      const userObj = JSON.parse(storedUser);
+      username.value = userObj.username || '';
+    } catch (e) {
+      console.error("Invalid userInfo in localStorage");
+    }
+  }
+
+  const headers = {
+    Authorization: `Bearer ${token}`
+  };
+
+  try {
+    const walletResponse = await axios.get(walletUrl, { headers });
+    wallet.value = walletResponse.data.balance;
+  } catch (error) {
+    console.error("Failed to fetch wallet balance", error);
+  }
+
+  try {
+    const bidsResponse = await axios.get(bidsUrl, { headers });
+    bids.value = Array.isArray(bidsResponse.data) ? bidsResponse.data.length : 0;
+  } catch (error) {
+    console.error("Failed to fetch bids", error);
+  }
+
+  await fetchAuctionData(); // initialize countdown
+});
+
+onUnmounted(() => {
+  clearInterval(intervalId);
+});
+</script>
 <template>
     <main style="background-color: #ebebd3ff;">
         <section style="margin-bottom: 12%;">
             <div style="display: flex;justify-content: space-between;align-items: center;padding: 24px;">
                 <div style="line-height: 8px;">
-                    <h2 style="font-size: 1.2em;font-weight: 600;">Hello, Coolerputt!</h2>
+                    <h2 style="font-size: 1.2em;font-weight: 600;">Hello, {{ username }}!</h2>
                     <p style="font-size: 0.9em;">Welcome back</p>
                 </div>
                 <div>
@@ -12,26 +98,17 @@
             </div>
             <section style="display: flex;justify-content: center;align-items: center;flex-direction: column;">
                 <div style="text-align: center;display: flex;justify-content: center;align-items: center;border-radius: 3px;">
-                    <span style="color: #004f28;background-color: #e0ffe0;font-size: 0.9em;padding: 4px;font-weight: 600;border-radius: 6px;">⏰ Next auction starts in 0h :01m :0s</span>
+                    <span style="color: #004f28;background-color: #e0ffe0;font-size: 0.9em;padding: 4px;font-weight: 600;border-radius: 6px;">⏰ Next auction starts in {{ countdown }}</span>
                 </div>
                 <div style="margin-top: 4%;border-radius: 3px;background-color: #95190C;padding: 12px;width: 80%;">
                     <div>
-                        <div style="display: flex;justify-content: space-between;align-items: center;width: 100%;color: #fff;"><p style="font-size: 1.3em;color: #fff;display: flex;justify-content: flex-start;align-items: center;gap: 3%;">Market Status</p> <span style="background-color: #191919;border-radius: 50px;color: #fff;padding: 5px;font-size: 0.9em;padding-left: 10px;padding-right: 10px;">Market Closed</span></div>
-                        <div style="display: flex;justify-content: space-between;align-items: center;width: 100%;color: #fff;"><p>🕐 Next Auction: 08:30PM</p><p>02:02:18</p></div>
+                        <div style="display: flex;justify-content: space-between;align-items: center;width: 100%;color: #fff;"><p style="font-size: 1.3em;color: #fff;display: flex;justify-content: flex-start;align-items: center;gap: 3%;">Market Status</p> <span style="background-color: #191919;border-radius: 50px;color: #fff;padding: 5px;font-size: 0.9em;padding-left: 10px;padding-right: 10px;">Market {{ marketStatus }}</span></div>
+                        <div style="display: flex;justify-content: space-between;align-items: center;width: 100%;color: #fff;"><p>🕐 Next Auction: {{ nextAuctionTime }}</p><p>{{ countdown }}</p></div>
                         <div style="display: flex;justify-content: center;align-items: center;width: 100%;">
-                            <button style="width: 60vw;padding: 10px;background-color: #fff;font-weight: 550;text-align: center;border-radius: 50px;outline: none;border: none;">Auction</button>
+                            <button v-if="marketStatus === 'closed'" style="width: 60vw;padding: 10px;background-color: #fff;font-weight: 550;text-align: center;border-radius: 50px;outline: none;border: none;">Auction Closed</button>
+                            <button v-else style="width: 60vw;padding: 10px;background-color: #fff;font-weight: 550;text-align: center;border-radius: 50px;outline: none;border: none;">Auction</button>
                         </div>
                     </div>
-                </div>
-                <!-- Wallet Balance Card -->
-                <div style="margin-top: 4%; border-radius: 12px; background-color: #17a35e; padding: 20px; width: 80%; max-width: 600px; margin-inline: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-                <p style="font-size: 1.2em; color: #fff; font-weight: 600; margin-bottom: 10px;">💰 Wallet Balance</p>
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="color: #fff; font-size: 1.6em; font-weight: bold;">₦50,000</span>
-                    <button style="padding: 10px 20px; background-color: #fff; color: #17a35e; font-weight: 600; border-radius: 50px; border: none; cursor: pointer;">
-                    Withdraw
-                    </button>
-                </div>
                 </div>
 
                 <!-- Ongoing Bids Card -->
@@ -41,7 +118,7 @@
                     Ongoing Bids
                 </p>
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="color: #fff; font-size: 1.5em; font-weight: bold;">1</span>
+                    <span style="color: #fff; font-size: 1.5em; font-weight: bold;">{{ bids }}</span>
                     <button style="padding: 10px 20px; background-color: #fff; color: #191919; font-weight: 600; border-radius: 50px; border: none; cursor: pointer;">
                     View Bid
                     </button>
@@ -49,20 +126,14 @@
                 </div>
                 <!-- Combined Referral Overview -->
 <div style="margin-top: 4%; border-radius: 12px; background-color: #e0ffe0; padding: 20px; width: 80%; max-width: 600px; margin-inline: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-  <p style="font-size: 1.2em; color: #004f28; font-weight: 600; margin-bottom: 16px;">🎁 Referral Overview</p>
+  <p style="font-size: 1.2em; color: #004f28; font-weight: 600; margin-bottom: 16px;">🎁 Referral + Daily Bonus</p>
   
   <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
     
     <!-- Referral Balance -->
     <div style="flex: 1; min-width: 120px;">
-      <p style="color: #004f28; font-size: 0.9em; margin-bottom: 4px;">Referral Balance</p>
-      <span style="font-size: 1.5em; font-weight: bold; color: #004f28;">₦2,000</span>
-    </div>
-
-    <!-- Referral Count -->
-    <div style="flex: 1; min-width: 120px;">
-      <p style="color: #004f28; font-size: 0.9em; margin-bottom: 4px;">Total Referrals</p>
-      <span style="font-size: 1.5em; font-weight: bold; color: #004f28;">4 Users</span>
+      <p style="color: #004f28; font-size: 0.9em; margin-bottom: 4px;">Bonus</p>
+      <span style="font-size: 1.5em; font-weight: bold; color: #004f28;">₦{{ wallet }}</span>
     </div>
 
     <!-- Withdraw Button -->
@@ -73,18 +144,16 @@
     </div>
   </div>
 </div>
-
-
                 <!-- Referral Info Card -->
                 <div style="margin-top: 4%; border-radius: 12px; background-color: #fff; padding: 20px; width: 80%; max-width: 600px; margin-inline: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
                 <p style="font-size: 1.2em; color: #17a35e; font-weight: 600; margin-bottom: 10px;">📢 Invite & Earn</p>
                 <p style="color: #444; font-size: 0.95em; margin-bottom: 10px;">
-                    Share your referral link and earn ₦500 for every user that joins and makes a bid.
+                    Share your referral code and earn ₦500 for every user that joins and makes a bid.
                 </p>
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                    <input type="text" readonly value="https://yourapp.com/ref/coolerputt" style="flex: 1; min-width: 200px; padding: 10px; border-radius: 6px; border: 1px solid #ccc;" />
+                    <input type="text" readonly value="REFCOO" style="flex: 1; min-width: 200px; padding: 10px; border-radius: 6px; border: 1px solid #ccc;" />
                     <button style="padding: 10px 16px; background-color: #17a35e; color: #fff; font-weight: 600; border: none; border-radius: 6px; cursor: pointer;">
-                    Copy Link
+                    Copy Code
                     </button>
                 </div>
                 </div>

@@ -1,53 +1,166 @@
 <template>
   <section class="create-bid-page">
-    <section class="header">
-      <h2>Create a New Investment Bid</h2>
-      <p>Set the amount, duration, and reward percentage</p>
-    </section>
+    <!-- Header -->
+    <h2 class="page-title">Investment Bid</h2>
 
-    <div style="text-align: center; display: flex; justify-content: center; align-items: center; border-radius: 3px;">
-      <span style="color: #004f28; background-color: #e0ffe0; font-size: 0.9em; padding: 4px; font-weight: 600; border-radius: 6px;">
-        ⏰ Next auction starts in 0h :01m :0s
+    <!-- Auction Countdown -->
+    <div class="auction-info">
+      <span class="countdown">
+        ⏰ Next auction starts in 
+        {{ formatTime(auctionInfo.remaining_seconds) }}
+      </span>
+      <span
+        class="status"
+        :class="{ open: auctionInfo.market_status === 'open', closed: auctionInfo.market_status !== 'open' }"
+      >
+        {{ auctionInfo.market_status === 'open' ? 'Market Open' : 'Market Closed' }}
       </span>
     </div>
 
-    <section class="info-banner">
-      💡 Create a bid and let others invest with you. You'll pay back with a percentage reward.
-    </section>
+    <!-- Bid Card -->
+    <BidCard
+      v-if="bids.length > 0"
+      :bid="bids[0]"
+      @action="handleBidAction"
+    />
 
-    <section class="create-section">
-      <form class="create-form" @submit.prevent="submitBid">
-        <label>
-          Amount to Receive (₦):
-          <input type="number" v-model="form.amount" required />
-        </label>
-        <label>
-          Duration (days):
-          <input type="number" v-model="form.duration" required />
-        </label>
-        <label>
-          Return Percentage (%):
-          <input type="number" v-model="form.return" required />
-        </label>
-        <button type="submit" class="btn-join">Create Bid</button>
-      </form>
-    </section>
+    <!-- No Bids Message -->
+    <div v-else class="no-bids">
+      <p>No bids available. Create one below.</p>
+    </div>
+
+    <!-- Create Bid Form -->
+    <form class="create-form" @submit.prevent="submitBid">
+      <label for="amount">Amount (₦):</label>
+      <input type="number" id="amount" v-model="form.amount" required />
+
+      <button
+        type="submit"
+        :disabled="auctionInfo.market_status !== 'open' || (bids.length > 0 && bids[0].status !== 'paid')"
+      >
+        {{
+          auctionInfo.market_status !== 'open'
+            ? 'Auction Closed'
+            : bids.length > 0 && bids[0].status !== 'paid'
+              ? 'Pending Bid Exists'
+              : 'Create Bid'
+        }}
+      </button>
+    </form>
   </section>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue'
+import { toast } from 'vue3-toastify';
+import axios from 'axios';
+import BidCard from '@/components/BidCard.vue';
 
-const form = ref({
-  amount: '',
-  duration: '',
-  return: ''
-});
+const form = ref({ amount: '' })
+const bids = ref([])
+const auctionInfo = ref({ remaining_seconds: 0, market_status: '' })
 
-const submitBid = () => {
-  alert(`Bid created for ₦${form.value.amount}, ${form.value.return}% return in ${form.value.duration} days.`);
-  form.value = { amount: '', duration: '', return: '' };
-};
+const fetchBids = async () => {
+  const token = localStorage.getItem('access_token')
+  try {
+    const res = await axios.get('http://127.0.0.1:8000/api/bids/', {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    bids.value = res.data
+  } catch (err) {
+    console.error('Failed to fetch bids:', err)
+  }
+}
+
+const fetchAuctionStatus = async () => {
+  try {
+    const res = await axios.get('http://127.0.0.1:8000/api/admin/auction/status/')
+    auctionInfo.value = res.data
+  } catch (err) {
+    console.error('Failed to fetch auction status:', err)
+  }
+}
+
+const submitBid = async () => {
+  const token = localStorage.getItem('access_token')
+  if (bids.value.length > 0 && bids.value[0].status !== 'paid') {
+    toast.warning('You already have a pending bid. Please wait or complete it.')
+    return
+  }
+  const payload = {
+    amount: form.value.amount,
+    plan: '50_24'
+  }
+
+  try {
+    await axios.post('http://127.0.0.1:8000/api/bids/', payload, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    })
+    toast.success('Bid successfully created!')
+    form.value.amount = ''
+    fetchBids()
+  } catch (err) {
+    console.error('Bid creation failed:', err)
+    toast.error('Failed to create bid.')
+  }
+}
+
+const formatTime = (seconds) => {
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  const s = seconds % 60
+  return `${h}h : ${m}m : ${s}s`
+}
+
+onMounted(() => {
+  fetchBids()
+  fetchAuctionStatus()
+})
+
+setInterval(() => {
+  if (auctionInfo.value.remaining_seconds > 0) {
+    auctionInfo.value.remaining_seconds--
+  }
+}, 1000)
+
+setInterval(fetchAuctionStatus, 60000)
+
+const handleBidAction = async (bid) => {
+  const token = localStorage.getItem('access_token')
+
+  if (bid.status === 'paid') {
+    try {
+      await axios.post(
+        'http://127.0.0.1:8000/api/bids/',
+        {
+          amount: bid.amount,
+          plan: bid.plan,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      )
+
+      toast.success('✅ Recommit successful! A new bid has been created.', {
+        timeout: 4000,
+      })
+
+      // Optional: Refresh bid list or reload page
+      fetchBids()
+    } catch (err) {
+      console.error('Recommit failed:', err)
+      toast.error('❌ Failed to recommit. Please try again.')
+    }
+  }
+}
 </script>
 
 <style scoped>
@@ -57,51 +170,88 @@ const submitBid = () => {
   font-family: Arial, sans-serif;
 }
 
-.header {
+.page-title {
+  text-align: center;
+  font-size: 1.5em;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.auction-info {
   text-align: center;
   margin-bottom: 20px;
 }
 
-.header h2 {
-  font-size: 1.8em;
-  font-weight: 700;
-  color: #191919;
-}
-
-.header p {
-  font-size: 0.95em;
-  color: #555;
-}
-
-.info-banner {
-  background-color: #e0ffe0;
-  padding: 12px;
-  border-left: 5px solid #17a35e;
-  font-size: 0.9em;
+.countdown {
+  display: block;
   color: #004f28;
-  margin: 20px 0;
+  background-color: #e0ffe0;
+  font-size: 0.9em;
+  padding: 6px 12px;
+  font-weight: 600;
   border-radius: 6px;
+  margin-bottom: 8px;
 }
 
-.create-section {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
+.status {
+  font-size: 0.9em;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 50px;
+  color: #fff;
+  display: inline-block;
+}
+
+.status.open {
+  background-color: #17a35e;
+}
+
+.status.closed {
+  background-color: #95190c;
+}
+
+.bid-card {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.bid-amount {
+  font-size: 1.1em;
+  font-weight: bold;
+  margin-bottom: 12px;
+}
+
+.bid-btn {
+  padding: 10px 20px;
+  background-color: #17a35e;
+  color: white;
+  border: none;
+  border-radius: 50px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.no-bids {
+  text-align: center;
+  color: #777;
+  margin-bottom: 20px;
 }
 
 .create-form {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
   background: #fff;
   padding: 20px;
   border-radius: 10px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
 
 .create-form label {
-  display: flex;
-  flex-direction: column;
   font-weight: 600;
   color: #333;
 }
@@ -113,19 +263,24 @@ const submitBid = () => {
   margin-top: 5px;
 }
 
-.btn-join {
+.create-form button {
   padding: 10px;
-  width: 100%;
   background-color: #17a35e;
   color: white;
   border: none;
   border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: background-color 0.3s ease;
 }
 
-.btn-join:hover {
+.create-form button:hover:enabled {
   background-color: #128f4a;
+}
+
+.create-form button:disabled {
+  background-color: #ccc;
+  color: #666;
+  cursor: not-allowed;
 }
 </style>

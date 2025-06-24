@@ -1,7 +1,43 @@
 <script setup>
+import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { toast } from 'vue3-toastify';
+import axios from 'axios';
 
 const router = useRouter();
+const username = ref('');
+const password = ref('');
+const loading = ref(false);
+
+const login = async () => {
+  if (!username.value || !password.value) {
+    toast.error("Both fields are required");
+    return;
+  }
+
+  loading.value = true;
+
+  try {
+    const response = await axios.post("http://127.0.0.1:8000/api/accounts/login/", {
+      username: username.value,
+      password: password.value,
+    });
+
+    const { access, refresh } = response.data;
+
+    // Optionally store user info or tokens
+    localStorage.setItem("access_token", access);
+    localStorage.setItem("refresh_token", refresh);
+    localStorage.setItem("userInfo", JSON.stringify({ username: username.value }));
+
+    toast.success("Login successful!");
+    router.push('/dashboard'); // change this to your app’s homepage
+  } catch (err) {
+    toast.error("Invalid credentials or user does not exist");
+  } finally {
+    loading.value = false;
+  }
+};
 </script>
 
 <template>
@@ -15,16 +51,16 @@ const router = useRouter();
             <div class="inputs" style="margin-top: 3%;">
               <div class="input-val" style="display: flex;justify-content: flex-start;align-items: center;border-bottom: 2px solid grey;width: 50%;">
                 <label for="email"><img src="/icons/email.svg" alt="Person Email" style="width: 1.2em;height: 1.2em;"></label>
-                <input type="email" placeholder="Your Email" style="outline: none;border: none;padding: 12px;width: 100%;font-size: 1em;">
+                <input type="email" v-model="username" placeholder="Your Email" style="outline: none;border: none;padding: 12px;width: 100%;font-size: 1em;">
               </div>
               <div class="input-val" style="display: flex;justify-content: flex-start;align-items: center;border-bottom: 2px solid grey;width: 50%;">
                 <label for="password"><img src="/icons/lock-closed.svg" alt="Person Password" style="width: 1.2em;height: 1.2em;"></label>
-                <input type="password" placeholder="Your Password" style="outline: none;border: none;padding: 12px;width: 100%;font-size: 1em;" minlength="6">
+                <input type="password" v-model="password" placeholder="Your Password" style="outline: none;border: none;padding: 12px;width: 100%;font-size: 1em;" minlength="6">
               </div>
               <div style="display: flex;justify-content: flex-start;align-items: center;margin-top: 4%;">
-                <button style="width: 25vw;height: 3em;color: #fff;outline: none;border: none;background-color: #04724D;cursor: pointer;text-align: center;">
-                  <span>Login</span>
-                  <!-- <div class="loader"></div> -->
+                <button style="width: 25vw;height: 3em;color: #fff;outline: none;border: none;background-color: #04724D;cursor: pointer;text-align: center;" @click.prevent="login" :disabled="loading">
+                  <span v-if="!loading">Login</span>
+                  <div v-else class="loader"></div>
                 </button>
               </div>
               <div class="redirect" style="font-size: 0.9em;text-align: left;width: 100%;margin-top: 5%;">Don't have an account?<a href="#" @click="router.push('signup')"> Sign up</a></div>

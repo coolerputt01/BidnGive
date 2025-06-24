@@ -29,6 +29,13 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",  # Your Vite/Vue frontend dev server
+    # Add more if needed
+]
+
+CORS_ALLOW_CREDENTIALS = True
+
 
 # Application definition
 
@@ -45,12 +52,14 @@ INSTALLED_APPS = [
     'referral',
     'adminpanel',
     'reactivation',
+    'corsheaders',
     'rest_framework',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -62,7 +71,7 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'backend.urls'
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=10),
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=7),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
 }
 

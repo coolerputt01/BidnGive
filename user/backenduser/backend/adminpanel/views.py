@@ -4,7 +4,47 @@ from rest_framework.permissions import IsAdminUser
 from bids.models import Bid
 from referral.models import ReferralBonus
 from .models import MergeSettings
-from datetime import datetime
+from datetime import datetime, time, timedelta
+
+class AuctionStatusView(APIView):
+    def get(self, request):
+        settings = MergeSettings.objects.last()
+        
+        # Use default times if not set
+        morning = settings.morning_time if settings else time(8, 0)
+        evening = settings.evening_time if settings else time(18, 30)
+        
+        now = datetime.now()
+        now_time = now.time()
+
+        def next_auction(now_time, morning, evening):
+            today = datetime.today()
+            morning_dt = datetime.combine(today, morning)
+            evening_dt = datetime.combine(today, evening)
+
+            if now_time < morning:
+                return morning_dt
+            elif now_time < evening:
+                return evening_dt
+            else:
+                return morning_dt + timedelta(days=1)
+
+        next_time = next_auction(now_time, morning, evening)
+        time_diff = next_time - now
+        remaining_seconds = max(0, int(time_diff.total_seconds()))
+
+        # Calculate auction window (30 minutes)
+        def in_window(start_time):
+            end_time = (datetime.combine(datetime.today(), start_time) + timedelta(minutes=30)).time()
+            return start_time <= now_time <= end_time
+
+        is_open = in_window(morning) or in_window(evening)
+
+        return Response({
+            "market_status": "open" if is_open else "closed",
+            "next_auction": next_time.strftime("%I:%M %p"),
+            "remaining_seconds": remaining_seconds
+        })
 
 class PendingBidsView(APIView):
     permission_classes = [IsAdminUser]

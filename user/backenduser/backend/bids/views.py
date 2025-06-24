@@ -1,6 +1,7 @@
 from rest_framework import viewsets, permissions, status , generics
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser
@@ -27,6 +28,11 @@ class BidViewSet(viewsets.ModelViewSet):
         return Bid.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
+        user = self.request.user
+        has_pending = Bid.objects.filter(user=user).exclude(status='paid').exists()
+
+        if has_pending:
+            raise ValidationError("You already have a pending bid.")
         serializer.save(user=self.request.user)
 
     def partial_update(self, request, *args, **kwargs):

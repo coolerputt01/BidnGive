@@ -1,18 +1,24 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { toast } from 'vue3-toastify';
+import axios from 'axios';
+
 const router = useRouter();
 const otpLength = 4;
 const otp = ref(Array(4).fill(''));
 const otpRefs = ref([]);
+const loading = ref(false);
 
-// Ensure refs array matches OTP length
+// Get user email from localStorage
+const email = JSON.parse(localStorage.getItem("userInfo"))?.email || '';
+
 onMounted(() => {
   otpRefs.value = otpRefs.value.slice(0, otpLength);
 });
 
 const handleInput = (index) => {
-  if (otp.value[index].length === 1 && index < otpLength) {
+  if (otp.value[index].length === 1 && index < otpLength - 1) {
     otpRefs.value[index + 1]?.focus();
   }
 };
@@ -23,7 +29,37 @@ const handleBackspace = (index) => {
   }
 };
 
+const verifyOTP = async () => {
+  const enteredOTP = otp.value.join('');
+  if (enteredOTP.length !== otpLength) {
+    toast.error("Please enter the full OTP");
+    return;
+  }
+
+  loading.value = true;
+
+  try {
+    const response = await axios.post("http://127.0.0.1:8000/api/accounts/verify-email/", {
+      email,
+      otp: enteredOTP
+    });
+
+    toast.success("Email verified! Redirecting...");
+    setTimeout(() => {
+      router.push('/');
+    }, 1500);
+  } catch (err) {
+    if (err.response?.data?.error) {
+      toast.error(err.response.data.error);
+    } else {
+      toast.error("An unexpected error occurred");
+    }
+  } finally {
+    loading.value = false;
+  }
+};
 </script>
+
 <template>
     <main style="background-color: #EBEBD3;width: 100vw;height: 100vh;">
         <section style="display: flex;justify-content: center;align-items: center;width: 100%;height: 100%;">
@@ -53,9 +89,9 @@ const handleBackspace = (index) => {
                     <span style="color: grey;text-align: left;font-size: 0.8em;display: flex;justify-content: flex-start;align-items: center;gap: 3%;">Resend available: <a href="#" style="font-weight: 600;cursor: pointer;text-decoration: none;">Resend OTP</a></span>
                 </div>
                 <div style="margin-top: 8%;">
-                    <button style="width: 100%;height: 3em;color: #fff;outline: none;border: none;background-color: #04724D;cursor: pointer;text-align: center;display: flex;justify-content: center;align-items: center;">
-                        <span>Verify</span>
-                        <!-- <div class="loader"></div> -->
+                    <button @click.prevent="verifyOTP" :disabled="loading" style="width: 100%;height: 3em;color: #fff;outline: none;border: none;background-color: #04724D;cursor: pointer;text-align: center;display: flex;justify-content: center;align-items: center;">
+                        <span v-if="!loading">Verify</span>
+                        <div v-else class="loader"></div>
                     </button>
                 </div>
                 <div>
