@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAdminUser
 from bids.models import Bid
-from referral.models import ReferralBonus
+from referral.models import ReferralBonus ,WithdrawalRequest
 from .models import MergeSettings
 from datetime import datetime, time, timedelta
 
@@ -61,25 +61,34 @@ class PendingBidsView(APIView):
             } for b in bids
         ]
         return Response(data)
+    
+class MarkWithdrawalPaidView(APIView):
+    permission_classes = [IsAdminUser]
 
-class ReferralBonusRequestsView(APIView):
+    def post(self, request, withdrawal_id):
+        try:
+            wd = WithdrawalRequest.objects.get(id=withdrawal_id, status='pending')
+            wd.status = 'paid'
+            wd.save()
+            return Response({'message': f'Withdrawal #{withdrawal_id} marked as paid.'})
+        except WithdrawalRequest.DoesNotExist:
+            return Response({'error': 'Withdrawal not found or already processed.'}, status=404)
+
+class PendingWithdrawalsView(APIView):
     permission_classes = [IsAdminUser]
 
     def get(self, request):
-        pending = ReferralBonus.objects.filter(withdrawn=False).select_related('user')
-        response = []
-        for bonus in pending:
-            user = bonus.user
-            response.append({
-                'bonus_id': bonus.id,
-                'user': user.username,
-                'amount': bonus.amount,
-                'level': bonus.level,
-                'bid_id': bonus.bid_id,
-                'account_number': user.account_number,
-                'bank': user.bank_name,
-            })
-        return Response(response)
+        pending = WithdrawalRequest.objects.filter(status='pending').select_related('user')
+        data = [
+            {
+                'id': w.id,
+                'user': w.user.username,
+                'email': w.user.email,
+                'amount': float(w.amount),
+                'requested_at': w.requested_at,
+            } for w in pending
+        ]
+        return Response(data)
 
 class ManualMergeView(APIView):
     permission_classes = [IsAdminUser]

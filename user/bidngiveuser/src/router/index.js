@@ -34,9 +34,9 @@ const router = createRouter({
       component: () => import('../views/BidsView.vue'),
     },
     {
-      path: '/auction',
-      name: 'auction',
-      component: () => import('../views/AuctionView.vue'),
+      path: '/merge-info',
+      name: 'merge-info',
+      component: () => import('../views/MergedView.vue'),
     },
     {
       path: '/withdraw',

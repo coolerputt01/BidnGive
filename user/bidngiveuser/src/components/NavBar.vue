@@ -18,9 +18,9 @@ const router = useRouter();
                 <span style="font-size: 1.5em;"><img src="/icons/withdraw.svg" alt="Home icon" style="width: 1.3em;height: 1.3em;"></span>
                 <span>Withdrawals</span>
             </a>
-            <a href="#auction" @click.prevent="router.push('/auction')" style="text-decoration: none; color: #000; display: flex; flex-direction: column; align-items: center;">
+            <a href="#auction" @click.prevent="router.push('/merge-info')" style="text-decoration: none; color: #000; display: flex; flex-direction: column; align-items: center;">
                 <span style="font-size: 1.5em;"><img src="/icons/auction.svg" alt="Home icon" style="width: 1.3em;height: 1.3em;"></span>
-                <span>Auction</span>
+                <span>Merge</span>
             </a>
             <a href="#profile" @click.prevent="router.push('/profile')" style="text-decoration: none; color: #000; display: flex; flex-direction: column; align-items: center;">
                 <span style="font-size: 1.5em;"><img src="/icons/profile.svg" alt="Home icon" style="width: 1.3em;height: 1.3em;"></span>

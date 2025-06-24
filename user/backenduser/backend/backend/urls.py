@@ -6,4 +6,5 @@ urlpatterns = [
     path('api/bids/', include('bids.urls')),
     path('api/reactivation/', include('reactivation.urls')),
     path('api/admin/', include('adminpanel.urls')),  # If separate admin app
+    path('api/referral/',include('referral.urls')),
 ]

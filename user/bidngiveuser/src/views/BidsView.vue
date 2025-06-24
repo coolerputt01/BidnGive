@@ -68,7 +68,7 @@ const fetchBids = async () => {
         Authorization: `Bearer ${token}`
       }
     })
-    bids.value = res.data
+    bids.value = res.data;
   } catch (err) {
     console.error('Failed to fetch bids:', err)
   }

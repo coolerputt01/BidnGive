@@ -3,9 +3,10 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.utils.timezone import now
 from rest_framework.permissions import IsAuthenticated
-from .models import ReferralBonus
+from .models import ReferralBonus , WithdrawalRequest
 from .serializers import ReferralBonusSerializer
 from wallet.models import Wallet
+from decimal import Decimal
 
 class LoginBonusView(APIView):
     permission_classes = [IsAuthenticated]
@@ -35,10 +36,33 @@ class RequestReferralWithdrawal(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
-        bonuses = ReferralBonus.objects.filter(user=request.user, withdrawn=False)
-        total = sum([b.amount for b in bonuses])
-        if total < 1000:
-            return Response({"message": "Minimum ₦1000 withdrawal required."}, status=400)
-        Wallet.objects.get_or_create(user=request.user)[0].credit(total)
-        bonuses.update(withdrawn=True)
-        return Response({"message": f"₦{total} moved to wallet for withdrawal."})
+        user = request.user
+        bank = request.data.get("bank")
+        account = request.data.get("account")
+        amount = request.data.get("amount")
+
+        try:
+            amount = Decimal(amount)
+        except:
+            return Response({"message": "Invalid amount format."}, status=400)
+
+        if amount < 1000:
+            return Response({"message": "Minimum withdrawal is ₦1000"}, status=400)
+
+        wallet = Wallet.objects.get_or_create(user=user)[0]
+
+        if wallet.balance < amount:
+            return Response({"message": "Insufficient wallet balance"}, status=400)
+
+        # Deduct balance and create request
+        wallet.balance -= amount
+        wallet.save()
+
+        WithdrawalRequest.objects.create(
+            user=user,
+            bank=bank,
+            account=account,
+            amount=amount,
+        )
+
+        return Response({"message": "Withdrawal request submitted successfully."}, status=status.HTTP_200_OK)
