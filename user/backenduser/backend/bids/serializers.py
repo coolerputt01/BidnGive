@@ -3,10 +3,18 @@ from .models import Bid
 from decimal import Decimal
 
 class BidSerializer(serializers.ModelSerializer):
+    can_recommit = serializers.SerializerMethodField()
+
     class Meta:
         model = Bid
         fields = '__all__'
         read_only_fields = ['user', 'status', 'merged_with', 'merged_at','expected_return']
+
+    def get_can_recommit(self, obj):
+        user = obj.user
+        if not user:
+            return False
+        return Bid.objects.filter(user=user, status='paid').exclude(id=obj.id).exists()
 
     def create(self, validated_data):
         user = self.context['request'].user

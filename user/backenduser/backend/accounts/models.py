@@ -13,7 +13,8 @@ class User(AbstractUser):
     is_disabled = models.BooleanField(default=False)
     last_login_bonus = models.DateField(null=True, blank=True)
     is_staff = models.BooleanField(default=False)
-    otp = models.CharField(max_length=6, null=True, blank=True)
+    phone_otp = models.CharField(max_length=6, null=True, blank=True)
+    email_otp = models.CharField(max_length=6, null=True, blank=True)
 
     REQUIRED_FIELDS = ['email', 'phone_number']
 

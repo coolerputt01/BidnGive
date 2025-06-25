@@ -43,6 +43,13 @@ class BidViewSet(viewsets.ModelViewSet):
             bid.save()
         return Response(BidSerializer(bid).data)
 
+        def destroy(self, request, *args, **kwargs):
+            bid = self.get_object()
+            if bid.status != 'pending':
+                return Response({'error': 'Only pending bids can be cancelled.'}, status=status.HTTP_400_BAD_REQUEST)
+            bid.delete()
+            return Response({'message': 'Bid cancelled.'}, status=status.HTTP_204_NO_CONTENT)
+
 class UploadProofView(generics.UpdateAPIView):
     serializer_class = BidPaymentConfirmSerializer
     permission_classes = [permissions.IsAuthenticated]

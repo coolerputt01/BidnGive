@@ -23,20 +23,45 @@
       </div>
       <div class="info-pair">
         <span class="label">⏳ Status:</span>
-        <span class="value">{{ bid.status === 'paid' ? 'Completed' : 'Awaiting Merge' }}</span>
+        <span class="value">
+          {{
+            bid.status === 'pending' ? 'Awaiting Merge'
+            : bid.status === 'merged' ? 'Merged, Awaiting Payment'
+            : bid.status === 'paid' ? 'Paid, Awaiting Confirmation'
+            : bid.status === 'completed' ? 'Completed'
+            : bid.status === 'expired' ? 'Expired'
+            : bid.status
+          }}
+        </span>
       </div>
     </div>
 
-    <div v-if="bid.status === 'paid'" class="card-footer">
-      <button class="btn-primary" @click="$emit('action', bid)">
+    <div class="card-footer">
+      <button
+        v-if="bid.status === 'paid' && bid.can_recommit"
+        class="btn-primary"
+        @click="$emit('action', bid)"
+      >
         🔁 Recommit
+      </button>
+
+      <button
+        v-if="bid.status === 'pending'"
+        class="btn-danger"
+        @click="cancelBid"
+      >
+        ❌ Cancel Bid
       </button>
     </div>
   </div>
 </template>
 
 <script setup>
-defineProps({ bid: Object })
+import axios from 'axios'
+import { toast } from 'vue3-toastify'
+const props = defineProps({ bid: Object })
+const emit = defineEmits(['refresh', 'action'])
+const token = localStorage.getItem('access_token')
 
 const formatDate = (isoDate) => {
   const date = new Date(isoDate)
@@ -55,6 +80,18 @@ const calculateReturn = (amount, plan) => {
     return (amount + profit).toLocaleString()
   } catch {
     return 'N/A'
+  }
+}
+
+const cancelBid = async () => {
+  try {
+    await axios.delete(`http://127.0.0.1:8000/api/bids/${props.bid.id}/`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    toast.success('Bid cancelled.')
+    emit('refresh')
+  } catch {
+    toast.error('Failed to cancel bid.')
   }
 }
 </script>
@@ -149,6 +186,9 @@ const calculateReturn = (amount, plan) => {
 .card-footer {
   text-align: right;
   margin-top: 10px;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
 }
 
 .btn-primary {
@@ -164,5 +204,20 @@ const calculateReturn = (amount, plan) => {
 
 .btn-primary:hover {
   background-color: #128f4a;
+}
+
+.btn-danger {
+  background-color: #dc3545;
+  color: white;
+  padding: 10px 22px;
+  border-radius: 30px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.btn-danger:hover {
+  background-color: #c82333;
 }
 </style>
