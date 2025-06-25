@@ -19,16 +19,24 @@ const login = async () => {
 
   try {
     const response = await axios.post("http://127.0.0.1:8000/api/accounts/login/", {
-      username: username.value,
+      email: username.value,
       password: password.value,
     });
 
-    const { access, refresh } = response.data;
+    const { access, refresh , is_phone_verified} = response.data;
 
     // Optionally store user info or tokens
     localStorage.setItem("access_token", access);
     localStorage.setItem("refresh_token", refresh);
     localStorage.setItem("userInfo", JSON.stringify({ username: username.value }));
+
+    if (!is_phone_verified) {
+      // ✅ Send WhatsApp OTP right after login
+      await axios.post("http://127.0.0.1:8000/api/accounts/send-whatsapp-otp/", {}, {
+        headers: { Authorization: `Bearer ${access}` }
+      });
+      toast.success("OTP sent to your WhatsApp.");
+    }
 
     toast.success("Login successful!");
     router.push('/dashboard'); // change this to your app’s homepage

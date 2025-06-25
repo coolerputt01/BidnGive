@@ -1,6 +1,6 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
-from .views import RegisterView, CustomTokenObtainPairView, VerifyEmailOTPView,SendWhatsAppOTP,verify_whatsapp_otp
+from .views import RegisterView, CustomTokenObtainPairView, VerifyEmailOTPView,SendWhatsAppOTP,verify_whatsapp_otp,UserProfileView
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
     path('login/', CustomTokenObtainPairView.as_view(), name='login'),
@@ -8,4 +8,5 @@ urlpatterns = [
     path('send-whatsapp-otp/', SendWhatsAppOTP.as_view()),
     path('verify-whatsapp-otp/', verify_whatsapp_otp),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('me/', UserProfileView.as_view(), name='user-profile'),
 ]

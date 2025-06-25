@@ -2,46 +2,65 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import NavBar from '@/components/NavBar.vue';
+import WhatsappCard from '@/components/WhatsappCard.vue'; // ✅ your OTP modal component
 import axios from 'axios';
 
 const route = useRoute();
 const router = useRouter();
-const hiddenRoutes = ['signup', 'otp', 'login', 'tos', '404'];
 
-const showNav = computed(() => {
-  return route.name && !hiddenRoutes.includes(route.name);
-});
-
+const user = ref(null);
+const showVerifyModal = ref(false);
 const tokenIsValid = ref(false);
 
-onMounted(async () => {
-  const token = localStorage.getItem("access_token");
+const hiddenRoutes = ['signup', 'otp', 'login', 'tos', '404'];
+const showNav = computed(() => route.name && !hiddenRoutes.includes(route.name));
 
-  if (!token) {
-    router.replace('/login');
+const checkAuthAndPhone = async () => {
+  const token = localStorage.getItem("access_token");
+  if (!token && !hiddenRoutes.includes(route.name)) {
+    router.replace({ name: 'login' });
     return;
   }
 
   try {
-    // Check token by hitting a protected endpoint
-    const response = await axios.get('http://127.0.0.1:8000/api/wallet/balance', {
+    const res = await axios.get('http://127.0.0.1:8000/api/accounts/me/', {
       headers: {
         Authorization: `Bearer ${token}`
       }
     });
 
-    if (response.status === 200) {
-      tokenIsValid.value = true;
-    }
-  } catch (error) {
-    console.error("Invalid token or not logged in:", error);
+    user.value = res.data;
+    tokenIsValid.value = true;
+    showVerifyModal.value = !res.data.is_phone_verified;
+  } catch (err) {
+    console.error('Auth check failed:', err);
     localStorage.removeItem("access_token");
-    router.replace('/login');
+    router.replace({ name: 'login' });
   }
-});
+};
+
+onMounted(checkAuthAndPhone);
 </script>
 
 <template>
-  <RouterView v-if="tokenIsValid" />
-  <NavBar v-if="tokenIsValid && showNav" />
+  <div>
+    <NavBar v-if="tokenIsValid && showNav" />
+
+    <!-- WhatsApp OTP Modal -->
+    <WhatsappCard
+      v-if="tokenIsValid && showVerifyModal"
+      :user="user"
+      @verified="showVerifyModal = false"
+    />
+
+    <RouterView v-if="tokenIsValid" />
+  </div>
 </template>
+
+<style>
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #f5f5f5;
+}
+</style>

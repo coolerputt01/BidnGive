@@ -1,4 +1,4 @@
-from rest_framework import generics, permissions
+from rest_framework import generics, permissions, serializers
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -7,8 +7,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .serializers import RegisterSerializer
+from django.contrib.auth import authenticate
 from .models import User
-from utils.send_whatsapp import send_whatsapp
+from .serializers import UserSerializer
+from accounts.utils.send_whatsapp import send_whatsapp
 import random
 
 class RegisterView(generics.CreateAPIView):
@@ -16,7 +18,16 @@ class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    username_field = 'email'  # 👈 enables email login
+
     def validate(self, attrs):
+        email = attrs.get('email')
+        password = attrs.get('password')
+
+        user = authenticate(request=self.context.get('request'), username=email, password=password)
+        if not user:
+            raise serializers.ValidationError('Invalid email or password.')
+
         data = super().validate(attrs)
         data['user_id'] = self.user.id
         data['username'] = self.user.username
@@ -28,19 +39,39 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
 class VerifyEmailOTPView(APIView):
     def post(self, request):
-        email = request.data.get("email")
-        otp = request.data.get("otp")
+        email = request.data.get("email", "").strip().lower()
+        otp = request.data.get("otp", "").strip()
+
+        if not email or not otp:
+            return Response({"error": "Both email and OTP are required."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             user = User.objects.get(email=email)
-            if user.otp == otp:
-                user.is_email_verified = True
-                user.otp = None  # clear used OTP
-                user.save()
-                return Response({"message": "Email verified successfully"})
-            return Response({"error": "Invalid OTP"}, status=400)
         except User.DoesNotExist:
-            return Response({"error": "User not found"}, status=404)
+            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if user.email_otp != otp:
+            return Response({"error": "Invalid OTP."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # OTP matched
+        user.is_email_verified = True
+        user.email_otp = None
+        user.save()
+        return Response({"message": "Email verified successfully."}, status=status.HTTP_200_OK)
+
+class UserProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        serializer = UserSerializer(request.user)
+        return Response(serializer.data)
+
+    def patch(self, request):
+        serializer = UserSerializer(request.user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class SendWhatsAppOTP(APIView):
     permission_classes = [IsAuthenticated]

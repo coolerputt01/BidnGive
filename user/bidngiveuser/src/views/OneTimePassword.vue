@@ -67,7 +67,7 @@ const verifyOTP = async () => {
                 <div style="line-height: 23px;">
                     <h1 style="font-size: 1.7em;font-weight: 650;">Verify OTP</h1>
                     <div style="font-weight: 450;font-size: 0.9em;line-height: 6px;color: grey;">
-                        <p>We sent an OTP to <b style="color: #000">adekoluolumide85@gmail.com</b></p>
+                        <p>We sent an OTP to <b style="color: #000">{{ email }}</b></p>
                         <span>Enter it below to continue.</span>
                     </div>
                 </div>

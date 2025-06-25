@@ -16,7 +16,8 @@ class User(AbstractUser):
     phone_otp = models.CharField(max_length=6, null=True, blank=True)
     email_otp = models.CharField(max_length=6, null=True, blank=True)
 
-    REQUIRED_FIELDS = ['email', 'phone_number']
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['phone_number']
 
     def save(self, *args, **kwargs):
         if not self.referral_code:

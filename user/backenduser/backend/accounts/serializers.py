@@ -8,6 +8,11 @@ User = get_user_model()
 def generate_otp():
     return str(random.randint(1000, 9999))
 
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        exclude = ['password']
+
 class RegisterSerializer(serializers.ModelSerializer):
     referral_code = serializers.CharField(required=False, allow_blank=True)
 
@@ -19,7 +24,7 @@ class RegisterSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         referral_code = validated_data.pop('referral_code', None)
         user = User(**validated_data)
-        user.otp = generate_otp()
+        user.email_otp = generate_otp()
         user.save()
         print(f"Generated OTP for {user.email}: {user.otp}")
         if referral_code:
