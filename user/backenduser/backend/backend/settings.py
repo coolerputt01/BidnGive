@@ -28,7 +28,7 @@ SECRET_KEY = 'django-insecure-$j_i0c#1k*plxj0=%rhovr^77#jt4m79#oan0gk-7__@@51p26
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['bidngive.onrender.com', 'localhost', '127.0.0.1']
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  # Your Vite/Vue frontend dev server
