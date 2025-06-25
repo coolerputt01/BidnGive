@@ -41,6 +41,7 @@ const checkAuthAndPhone = async () => {
   }
 };
 
+
 onMounted(checkAuthAndPhone);
 </script>
 
