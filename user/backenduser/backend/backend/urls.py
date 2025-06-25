@@ -1,7 +1,9 @@
+from django.http import JsonResponse
 from django.urls import path, include
 
 urlpatterns = [
     path('api/accounts/', include('accounts.urls')),
+    path('', lambda request: JsonResponse({"status": "API is live 🚀"})),
     path('api/wallet/', include('wallet.urls')),
     path('api/bids/', include('bids.urls')),
     path('api/reactivation/', include('reactivation.urls')),
