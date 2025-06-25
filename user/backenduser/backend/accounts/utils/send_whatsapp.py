@@ -1,13 +1,17 @@
 import requests
 
-def send_whatsapp(phone, message):
-    url = "https://api.ultramsg.com/instanceXXXX/messages/chat"
+def send_whatsapp(phone: str, message: str):
+    url = "https://api.ultramsg.com/instance128107/messages/chat"
+
     payload = {
-        "to": f"{phone}",
+        "token": "7zua6ekminxv7lsh",
+        "to": phone,  # e.g., "+2349065978408"
         "body": message,
     }
+
     headers = {
-        "content-type": "application/x-www-form-urlencoded",
-        "token": "your_ultramsg_token"
+        "Content-Type": "application/x-www-form-urlencoded"
     }
-    return requests.post(url, data=payload, headers=headers)
+
+    response = requests.post(url, data=payload, headers=headers)
+    return response.json()

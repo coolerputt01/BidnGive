@@ -36,6 +36,7 @@ const login = async () => {
         headers: { Authorization: `Bearer ${access}` }
       });
       toast.success("OTP sent to your WhatsApp.");
+      console.log("it worked")
     }
 
     toast.success("Login successful!");

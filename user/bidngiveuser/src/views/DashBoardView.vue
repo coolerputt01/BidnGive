@@ -198,6 +198,5 @@ onUnmounted(() => {
                 </section>
             </section>
         </section>
-        <NavBar />
     </main>
 </template>

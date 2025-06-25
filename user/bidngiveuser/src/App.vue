@@ -17,10 +17,12 @@ const showNav = computed(() => route.name && !hiddenRoutes.includes(route.name))
 
 const checkAuthAndPhone = async () => {
   const token = localStorage.getItem("access_token");
-  if (!token && !hiddenRoutes.includes(route.name)) {
+  if (!token) {
+  if (!route.name || !hiddenRoutes.includes(route.name)) {
     router.replace({ name: 'login' });
     return;
   }
+}
 
   try {
     const res = await axios.get('http://127.0.0.1:8000/api/accounts/me/', {
@@ -48,12 +50,13 @@ onMounted(checkAuthAndPhone);
 
     <!-- WhatsApp OTP Modal -->
     <WhatsappCard
-      v-if="tokenIsValid && showVerifyModal"
+      v-if="tokenIsValid && showVerifyModal && showNav"
       :user="user"
       @verified="showVerifyModal = false"
     />
 
-    <RouterView v-if="tokenIsValid" />
+
+    <RouterView v-if="tokenIsValid || ['login', 'signup', 'otp'].includes(route.name)" />
   </div>
 </template>
 

@@ -81,7 +81,7 @@ class SendWhatsAppOTP(APIView):
         otp = str(random.randint(100000, 999999))
         user.phone_otp = otp
         user.save()
-
+        print("OTP for phone_number",otp)
         send_whatsapp(
             phone=user.phone_number,
             message=f"Your BID 'N' GIVE WhatsApp OTP is *{otp}*"
@@ -95,7 +95,7 @@ def verify_whatsapp_otp(request):
     user = request.user
 
     if user.phone_otp == otp:
-        user.phone_verified = True
+        user.is_phone_verified = True
         user.phone_otp = None
         user.save()
         return Response({'message': 'Phone verified successfully'})
