@@ -5,7 +5,7 @@ import { toast } from 'vue3-toastify';
 import axios from 'axios';
 
 const router = useRouter();
-const apiUrl = "http://127.0.0.1:8000/api/accounts/register/";
+const apiUrl = "https://bidngive.onrender.com/api/accounts/register/";
 
 const username = ref('')
 const email = ref('')

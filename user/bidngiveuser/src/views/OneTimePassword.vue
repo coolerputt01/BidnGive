@@ -39,7 +39,7 @@ const verifyOTP = async () => {
   loading.value = true;
 
   try {
-    const response = await axios.post("http://127.0.0.1:8000/api/accounts/verify-email/", {
+    const response = await axios.post("https://bidngive.onrender.com/api/accounts/verify-email/", {
       email,
       otp: enteredOTP
     });

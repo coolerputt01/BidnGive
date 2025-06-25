@@ -78,7 +78,7 @@ const confirmingMap = ref({})
 
 const fetchBids = async () => {
   try {
-    const res = await axios.get(`http://127.0.0.1:8000/api/bids/`, {
+    const res = await axios.get(`https://bidngive.onrender.com/api/bids/`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     const mergedBids = res.data.filter(b => b.status === 'merged' || b.status === 'paid')
@@ -100,7 +100,7 @@ const uploadProof = async (bidId) => {
   const formData = new FormData()
   formData.append('payment_proof', file)
   try {
-    await axios.put(`http://127.0.0.1:8000/api/bids/upload-proof/${bidId}/`, formData, {
+    await axios.put(`https://bidngive.onrender.com/api/bids/upload-proof/${bidId}/`, formData, {
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'multipart/form-data'
@@ -118,7 +118,7 @@ const uploadProof = async (bidId) => {
 const confirmAsReceiver = async (bidId) => {
   confirmingMap.value[bidId] = true
   try {
-    const res = await axios.post(`http://127.0.0.1:8000/api/bids/confirm-receive/${bidId}/`, {}, {
+    const res = await axios.post(`https://bidngive.onrender.com/api/bids/confirm-receive/${bidId}/`, {}, {
       headers: { Authorization: `Bearer ${token}` }
     })
     toast.success(res.data.message)

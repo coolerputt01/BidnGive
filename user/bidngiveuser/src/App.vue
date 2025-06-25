@@ -25,7 +25,7 @@ const checkAuthAndPhone = async () => {
 }
 
   try {
-    const res = await axios.get('http://127.0.0.1:8000/api/accounts/me/', {
+    const res = await axios.get('https://bidngive.onrender.com/api/accounts/me/', {
       headers: {
         Authorization: `Bearer ${token}`
       }

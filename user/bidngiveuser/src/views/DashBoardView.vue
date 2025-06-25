@@ -9,9 +9,9 @@ const countdown = ref('');
 const marketStatus = ref('closed');
 const nextAuctionTime = ref('');
 
-const walletUrl = "http://127.0.0.1:8000/api/wallet/balance";
-const bidsUrl = "http://127.0.0.1:8000/api/bids/";
-const auctionUrl = "http://127.0.0.1:8000/api/admin/auction/status/";
+const walletUrl = "https://bidngive.onrender.com/api/wallet/balance";
+const bidsUrl = "https://bidngive.onrender.com/api/bids/";
+const auctionUrl = "https://bidngive.onrender.com/api/admin/auction/status/";
 
 let intervalId = null;
 

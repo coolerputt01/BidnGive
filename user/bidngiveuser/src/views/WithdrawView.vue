@@ -55,7 +55,7 @@ const submitWithdrawal = async () => {
   try {
     // Send form data to the backend
     const response = await axios.post(
-      'http://127.0.0.1:8000/api/referral/withdraw/', // Your real withdrawal endpoint
+      'https://bidngive.onrender.com/api/referral/withdraw/', // Your real withdrawal endpoint
       {
         bank: form.value.bank,
         account: form.value.account,
