@@ -63,7 +63,7 @@ const auctionInfo = ref({ remaining_seconds: 0, market_status: '' })
 const fetchBids = async () => {
   const token = localStorage.getItem('access_token')
   try {
-    const res = await axios.get('http://127.0.0.1:8000/api/bids/', {
+    const res = await axios.get('https://bidngive.onrender.com/api/bids/', {
       headers: {
         Authorization: `Bearer ${token}`
       }
@@ -76,7 +76,7 @@ const fetchBids = async () => {
 
 const fetchAuctionStatus = async () => {
   try {
-    const res = await axios.get('http://127.0.0.1:8000/api/admin/auction/status/')
+    const res = await axios.get('https://bidngive.onrender.com/api/admin/auction/status/')
     auctionInfo.value = res.data
   } catch (err) {
     console.error('Failed to fetch auction status:', err)
@@ -95,7 +95,7 @@ const submitBid = async () => {
   }
 
   try {
-    await axios.post('http://127.0.0.1:8000/api/bids/', payload, {
+    await axios.post('https://bidngive.onrender.com/api/bids/', payload, {
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json'
@@ -136,7 +136,7 @@ const handleBidAction = async (bid) => {
   if (bid.status === 'paid') {
     try {
       await axios.post(
-        'http://127.0.0.1:8000/api/bids/',
+        'https://bidngive.onrender.com/api/bids/',
         {
           amount: bid.amount,
           plan: bid.plan,

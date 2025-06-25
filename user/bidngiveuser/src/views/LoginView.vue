@@ -18,7 +18,7 @@ const login = async () => {
   loading.value = true;
 
   try {
-    const response = await axios.post("http://127.0.0.1:8000/api/accounts/login/", {
+    const response = await axios.post("https://bidngive.onrender.com/api/accounts/login/", {
       email: username.value,
       password: password.value,
     });
@@ -32,7 +32,7 @@ const login = async () => {
 
     if (!is_phone_verified) {
       // ✅ Send WhatsApp OTP right after login
-      await axios.post("http://127.0.0.1:8000/api/accounts/send-whatsapp-otp/", {}, {
+      await axios.post("https://bidngive.onrender.com/api/accounts/send-whatsapp-otp/", {}, {
         headers: { Authorization: `Bearer ${access}` }
       });
       toast.success("OTP sent to your WhatsApp.");
