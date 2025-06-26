@@ -36,12 +36,10 @@
 
       <button
         type="submit"
-        :disabled="auctionInfo.market_status !== 'open' || (bids.length > 0 && bids[0].status !== 'paid')"
+        :disabled="bids.length > 0 && bids[0].status !== 'paid'"
       >
         {{
-          auctionInfo.market_status !== 'open'
-            ? 'Auction Closed'
-            : bids.length > 0 && bids[0].status !== 'paid'
+        bids.length > 0 && bids[0].status !== 'paid'
               ? 'Pending Bid Exists'
               : 'Create Bid'
         }}

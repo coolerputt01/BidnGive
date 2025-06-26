@@ -159,7 +159,7 @@ onUnmounted(() => {
               <span style="font-size: 1.5em; font-weight: bold; color: #004f28;">₦{{ wallet }}</span>
             </div>
             <div style="flex: 1 1 100%; text-align: right;">
-              <button style="padding: 10px 20px; background-color: #17a35e; color: #fff; font-weight: 600; border-radius: 50px; border: none; cursor: pointer;">
+              <button style="padding: 10px 20px; background-color: #17a35e; color: #fff; font-weight: 600; border-radius: 50px; border: none; cursor: pointer;" @click="router.push('/withdraw')">
                 Withdraw
               </button>
             </div>
