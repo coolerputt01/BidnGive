@@ -44,7 +44,7 @@ const verifyOTP = async () => {
   loading.value = true
   try {
     const token = localStorage.getItem("access_token")
-    const res = await axios.post("http://127.0.0.1:8000/api/accounts/verify-whatsapp-otp/", {
+    const res = await axios.post("https://bidngive.onrender.com/api/accounts/verify-whatsapp-otp/", {
       otp: enteredOTP,
       phone: phoneNumber
     }, {
