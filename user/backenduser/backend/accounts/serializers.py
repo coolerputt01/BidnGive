@@ -26,7 +26,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         user = User(**validated_data)
         user.email_otp = generate_otp()
         user.save()
-        print(f"Generated OTP for {user.email}: {user.otp}")
+        print(f"Generated OTP for {user.email}: {user.email_otp}")
         if referral_code:
             try:
                 user.referred_by = User.objects.get(referral_code=referral_code)
