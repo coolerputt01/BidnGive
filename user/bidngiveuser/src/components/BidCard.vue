@@ -93,7 +93,7 @@ const calculateReturn = (amount, plan) => {
 
 const cancelBid = async () => {
   try {
-    await axios.delete(`http://127.0.0.1:8000/api/bids/${props.bid.id}/`, {
+    await axios.delete(`https://bidngive.onrender.com/api/bids/${props.bid.id}/`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     toast.success('Bid cancelled.')

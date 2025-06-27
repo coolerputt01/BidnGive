@@ -57,7 +57,7 @@ onMounted(checkAuthAndPhone);
     />
 
 
-    <RouterView v-if="tokenIsValid || ['login', 'signup', 'otp'].includes(route.name)" style="margin-bottom: 5em;" />
+    <RouterView v-if="tokenIsValid || ['login', 'signup', 'otp'].includes(route.name)"  />
   </div>
 </template>
 

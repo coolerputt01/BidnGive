@@ -120,7 +120,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <main style="background-color: #ebebd3ff;">
+  <main style="background-color: #ebebd3ff;margin-bottom: 5em;">
     <section style="margin-bottom: 12%;">
       <!-- Header -->
       <div style="display: flex; justify-content: space-between; align-items: center; padding: 24px;">
@@ -140,7 +140,7 @@ onUnmounted(() => {
         <div style="margin-top: 4%; background-color: #95190C; padding: 12px; width: 80%; border-radius: 12px;">
           <div style="color: #fff; display: flex; justify-content: space-between; margin-bottom: 10px;">
             <p style="font-size: 1.3em;">Market Status</p>
-            <span style="background-color: #191919; border-radius: 50px; padding: 5px 10px;display: flex;justify-content: center;align-items: center;">Market {{ marketStatus }}</span>
+            <span style="background-color: #000; display: flex;justify-content: center;padding: 0;flex: 0 0 auto;height: 2vh;padding: 1%;align-items: center;color: #fff; font-weight: 500; border-radius: 50px; border: none; cursor: pointer;">Market {{ marketStatus }}</span>
           </div>
           <div style="color: #fff; display: flex; justify-content: space-between;">
             <p>🕐 Next Auction: {{ nextAuctionTime }}</p>
@@ -192,7 +192,7 @@ onUnmounted(() => {
               <p style="color: #004f28; font-size: 0.9em;">Bonus</p>
               <span style="font-size: 1.5em; font-weight: bold;">₦{{ wallet }}</span>
             </div>
-            <button @click="router.push('/withdraw')" style="padding: 10px 20px; background-color: #17a35e; color: #fff; font-weight: 600; border-radius: 50px; border: none;">
+            <button @click="router.push('/withdraw')" style="background-color: #17a35e; color: #fff; font-weight: 600; border-radius: 50px; border: none; display: flex;justify-content: center;flex: 0 0 auto;height: 2vh;padding: 1.3%;align-items: center;">
               Withdraw
             </button>
           </div>

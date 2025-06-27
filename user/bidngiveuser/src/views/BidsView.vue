@@ -1,5 +1,5 @@
 <template>
-  <section class="create-bid-page">
+  <section class="create-bid-page" style="margin-bottom: 5em;">
     <!-- Header -->
     <h2 class="page-title">Investment Bid</h2>
 
