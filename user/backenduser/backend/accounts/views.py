@@ -38,12 +38,17 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         email = attrs.get('email')
         password = attrs.get('password')
 
+        print("EMAIL:", email)
+        print("PASSWORD:", password)
+
         user = authenticate(request=self.context.get('request'), username=email, password=password)
         if not user:
             raise serializers.ValidationError('Invalid email or password.')
 
         is_admin_login = self.context['request'].path.startswith('/api/admin/')
         if is_admin_login:
+            print("ADMIN EMAIL:", settings.ADMIN_EMAIL)
+            print("ADMIN PASSWORD:", settings.ADMIN_PASSWORD)
             if email != settings.ADMIN_EMAIL or password != settings.ADMIN_PASSWORD:
                 raise serializers.ValidationError('You are not authorized to log in as admin.')
 
