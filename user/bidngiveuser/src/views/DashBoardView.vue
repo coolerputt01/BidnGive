@@ -179,7 +179,7 @@ onUnmounted(() => {
           <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
             <span style="color: #fff; font-size: 1.5em; font-weight: bold;">{{ bids }}</span>
             <button @click="viewBid" style="padding: 10px 20px; background-color: #fff; color: #191919; font-weight: 600; border-radius: 50px; border: none; cursor: pointer;">
-              View Bid
+              Create Bid
             </button>
           </div>
         </div>
