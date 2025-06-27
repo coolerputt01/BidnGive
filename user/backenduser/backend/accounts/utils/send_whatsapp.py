@@ -4,8 +4,8 @@ def send_whatsapp(phone: str, message: str):
     url = "https://api.ultramsg.com/instance128107/messages/chat"
 
     payload = {
-        "token": "7zua6ekminxv7lsh",
-        "to": phone,  # e.g., "+2349065978408"
+        "token": "bd4yyce40e1253q8",
+        "to": phone,
         "body": message,
     }
 
