@@ -1,7 +1,7 @@
 from rest_framework.routers import DefaultRouter
 from .views import BidViewSet 
-from .views import UploadProofView, ConfirmReceiverView
-from django.urls import path , run_auto_merge, auto_block
+from .views import UploadProofView, ConfirmReceiverView,run_auto_merge, auto_block
+from django.urls import path
 
 router = DefaultRouter()
 router.register(r'', BidViewSet, basename='bid')  # register at root
