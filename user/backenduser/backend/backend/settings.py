@@ -49,7 +49,7 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'bidngive01@gmail.com'
-EMAIL_HOST_PASSWORD = 'mjrj toxv iucn siec'  # Use an App Password, not your real password
+EMAIL_HOST_PASSWORD = 'dccv gxrx rwtm aedq'  # Use an App Password, not your real password
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # Application definition
