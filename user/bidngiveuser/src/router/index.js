@@ -7,52 +7,52 @@ const router = createRouter({
     {
       path: '/signup',
       name: 'signup',
-      component: () => import('../views/SignupView.vue'),
+      component: () => import('@/views/SignupView.vue'),
     },
     {
       path: '/',
       name: 'login',
-      component: () => import('../views/LoginView.vue'),
+      component: () => import('@/views/LoginView.vue'),
     },
     {
       path: '/terms-of-service',
       name: 'tos',
-      component: () => import('../views/TermsOfService.vue'),
+      component: () => import('@/views/TermsOfService.vue'),
     },
     {
       path: '/otp',
       name: 'otp',
-      component: () => import('../views/OneTimePassword.vue'),
+      component: () => import('@/views/OneTimePassword.vue'),
     },
     {
       path: '/dashboard',
       name: 'dashboard',
-      component: () => import('../views/DashboardView.vue'),
+      component: () => import('@/views/DashboardView.vue'),
     },
     {
       path: '/bid',
       name: 'bid',
-      component: () => import('../views/BidsView.vue'),
+      component: () => import('@/views/BidsView.vue'),
     },
     {
       path: '/merge-info',
       name: 'merge-info',
-      component: () => import('../views/MergedView.vue'),
+      component: () => import('@/views/MergedView.vue'),
     },
     {
       path: '/withdraw',
       name: 'withdraw',
-      component: () => import('../views/WithdrawView.vue'),
+      component: () => import('@/views/WithdrawView.vue'),
     },
     {
       path: '/profile',
       name: 'profile',
-      component: () => import('../views/ProfileView.vue'),
+      component: () => import('@/views/ProfileView.vue'),
     },
     {
       path: '/:pathMatch(.*)*',
       name: '404',
-      component: () => import('../views/NotFoundView.vue'),
+      component: () => import('@/views/NotFoundView.vue'),
     }
   ],
 });
