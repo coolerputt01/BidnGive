@@ -3,6 +3,8 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { toast } from 'vue3-toastify';
 import axios from 'axios';
+import eye from 'icons/eye-svgrepo-com.svg';
+import eyeClosed from 'icons/eye-slash-svgrepo-com.svg'
 
 const router = useRouter();
 const apiUrl = "https://bidngive.onrender.com/api/accounts/register/";
@@ -82,11 +84,11 @@ const signUp = async () => {
           />
           <label>Password</label>
           <span class="toggle-icon" @click="showPassword = !showPassword">
-            {{ showPassword ? '🙈' : '👁️' }}
+            {{ showPassword ? eyeClosed : eye }}
           </span>
         </div>
         <div class="form-group password-field"><input v-model="confirmPassword" :type="showConfirmPassword ? 'text' : 'password'" required placeholder=" " minlength="6" /><label>Confirm Password</label><span class="toggle-icon" @click="showConfirmPassword = !showConfirmPassword">
-            {{ showConfirmPassword ? '🙈' : '👁️' }}
+            {{ showConfirmPassword ? eyeClosed : eye }}
           </span></div>
         <div class="form-group"><input v-model="referral_code" type="text" placeholder=" " /><label>Referral Code (optional)</label></div>
 
