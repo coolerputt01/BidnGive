@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import PendingBidsView, ManualMergeView,AuctionStatusView ,  PendingWithdrawalsView, MarkWithdrawalPaidView,UpdateMergeSettingsView,CreateInvestmentView,CancelInvestmentView, BlockUserView,UnblockUserView,LoginAsUserView
+from .views import PendingBidsView, ManualMergeView,AuctionStatusView ,  PendingWithdrawalsView, MarkWithdrawalPaidView,UpdateMergeSettingsView,CreateInvestmentView,CancelInvestmentView, BlockUserView,UnblockUserView,LoginAsUserView,AllUsersView
 
 urlpatterns = [
     path("pending-bids/", PendingBidsView.as_view(), name="pending-bids"),
@@ -13,6 +13,5 @@ urlpatterns = [
     path("user/block/", BlockUserView.as_view(), name="block-user"),
     path("user/unblock/", UnblockUserView.as_view(), name="unblock-user"),
     path("user/login-as/", LoginAsUserView.as_view(), name="login-as-user"),
-
-
+    path("admin/all-users/", AllUsersView.as_view(), name="all-users"),
 ]

@@ -7,6 +7,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from .models import MergeSettings
 from datetime import datetime, time, timedelta
 from accounts.models import User
+from accounts.serializers import UserSerializer
 
 class AuctionStatusView(APIView):
     def get(self, request):
@@ -47,6 +48,14 @@ class AuctionStatusView(APIView):
             "next_auction": next_time.strftime("%I:%M %p"),
             "remaining_seconds": remaining_seconds
         })
+    
+class AllUsersView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        users = User.objects.all().order_by('-date_joined')
+        serialized = UserSerializer(users, many=True)
+        return Response(serialized.data)
 
 class PendingBidsView(APIView):
     permission_classes = [IsAdminUser]

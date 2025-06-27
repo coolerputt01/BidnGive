@@ -20,11 +20,6 @@
           <span v-else>Logging in...</span>
         </button>
       </form>
-
-      <p class="footer-text">
-        Don’t have an account?
-        <router-link to="/admin-register">Register here</router-link>
-      </p>
     </div>
   </main>
 </template>

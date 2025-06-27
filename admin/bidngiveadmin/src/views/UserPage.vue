@@ -3,7 +3,7 @@
     <Navbar />
     <section class="content">
       <h2>👥 Registered Users</h2>
-      <table class="user-table">
+      <table class="user-table" v-if="users.length">
         <thead>
           <tr>
             <th>#</th>
@@ -20,7 +20,11 @@
             <td>{{ user.username }}</td>
             <td>{{ user.email }}</td>
             <td>{{ user.phone_number }}</td>
-            <td>{{ user.is_disabled ? 'Blocked' : 'Active' }}</td>
+            <td>
+              <span :class="user.is_disabled ? 'blocked' : 'active'">
+                {{ user.is_disabled ? 'Blocked' : 'Active' }}
+              </span>
+            </td>
             <td>
               <button @click="blockUser(user.email)" class="danger">Block</button>
               <button @click="unblockUser(user.email)" class="success">Unblock</button>
@@ -29,6 +33,7 @@
           </tr>
         </tbody>
       </table>
+      <p v-else>Loading users...</p>
     </section>
   </div>
 </template>
@@ -53,23 +58,35 @@ const fetchUsers = async () => {
 }
 
 const blockUser = async (email) => {
-  await axios.post('https://bidngive.onrender.com/api/admin/user/block/', { email }, { headers })
-  toast.success('User blocked')
-  fetchUsers()
+  try {
+    await axios.post('https://bidngive.onrender.com/api/admin/user/block/', { email }, { headers })
+    toast.success('User blocked')
+    fetchUsers()
+  } catch {
+    toast.error('Failed to block user')
+  }
 }
 
 const unblockUser = async (email) => {
-  await axios.post('https://bidngive.onrender.com/api/admin/user/unblock/', { email }, { headers })
-  toast.success('User unblocked')
-  fetchUsers()
+  try {
+    await axios.post('https://bidngive.onrender.com/api/admin/user/unblock/', { email }, { headers })
+    toast.success('User unblocked')
+    fetchUsers()
+  } catch {
+    toast.error('Failed to unblock user')
+  }
 }
 
 const loginAs = async (email) => {
-  const res = await axios.post('https://bidngive.onrender.com/api/admin/user/login-as/', { email }, { headers })
-  localStorage.setItem('access_token', res.data.access)
-  localStorage.setItem('refresh_token', res.data.refresh)
-  localStorage.setItem('userInfo', JSON.stringify({ username: res.data.username, email: res.data.email }))
-  window.location.href = '/'
+  try {
+    const res = await axios.post('https://bidngive.onrender.com/api/admin/user/login-as/', { email }, { headers })
+    localStorage.setItem('access_token', res.data.access)
+    localStorage.setItem('refresh_token', res.data.refresh)
+    localStorage.setItem('userInfo', JSON.stringify({ username: res.data.username, email: res.data.email }))
+    window.location.href = '/'
+  } catch {
+    toast.error('Failed to login as user')
+  }
 }
 
 onMounted(fetchUsers)
@@ -116,5 +133,13 @@ button {
 .primary {
   background: #1565c0;
   color: white;
+}
+.active {
+  color: green;
+  font-weight: 600;
+}
+.blocked {
+  color: red;
+  font-weight: 600;
 }
 </style>

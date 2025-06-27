@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Login from '@/views/Login.vue'
-import Signup from '@/views/Signup.vue'
 import Dashboard from '@/views/Dashboard.vue'
 import PendingBids from '@/views/PendingBids.vue'
 import Withdrawals from '@/views/Withdrawals.vue'
@@ -12,7 +11,6 @@ import UserPage from '@/views/UserPage.vue'
 
 const routes = [
   { path: '/', name: 'Login', component: Login },
-  { path: '/signup', name: 'Signup', component: Signup },
   { path: '/dashboard', name: 'Dashboard', component: Dashboard },
   { path: '/pending-bids', name: 'PendingBids', component: PendingBids },
   { path: '/withdrawals', name: 'Withdrawals', component: Withdrawals },
