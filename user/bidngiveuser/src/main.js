@@ -13,4 +13,11 @@ app.use(Vue3Toastify, {
     autoClose: 3000,
 });
 
+if (window.location.hostname.startsWith('www.')) {
+  window.location.replace(
+    window.location.href.replace('www.', '')
+  );
+}
+
+
 app.mount('#app');
