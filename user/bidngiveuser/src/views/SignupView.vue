@@ -7,6 +7,9 @@ import axios from 'axios';
 const router = useRouter();
 const apiUrl = "https://bidngive.onrender.com/api/accounts/register/";
 
+const showPassword = ref(false);
+const showConfirmPassword = ref(false);
+
 const username = ref('');
 const email = ref('');
 const phone_number = ref('');
@@ -66,11 +69,25 @@ const signUp = async () => {
       </header>
 
       <form class="login-form" @submit.prevent="signUp">
-        <div class="form-group"><input v-model="username" type="text" required placeholder=" " /><label>Full Name</label></div>
+        <div class="form-group"><input v-model="username" type="text" required placeholder=" " /><label>Username</label></div>
         <div class="form-group"><input v-model="email" type="email" required placeholder=" " /><label>Email</label></div>
         <div class="form-group"><input v-model="phone_number" type="text" required placeholder=" " maxlength="11" /><label>Phone Number</label></div>
-        <div class="form-group"><input v-model="password" type="password" required placeholder=" " minlength="6" /><label>Password</label></div>
-        <div class="form-group"><input v-model="confirmPassword" type="password" required placeholder=" " minlength="6" /><label>Confirm Password</label></div>
+        <div class="form-group password-field">
+          <input
+            :type="showPassword ? 'text' : 'password'"
+            v-model="password"
+            required
+            placeholder=" "
+            minlength="6"
+          />
+          <label>Password</label>
+          <span class="toggle-icon" @click="showPassword = !showPassword">
+            {{ showPassword ? '🙈' : '👁️' }}
+          </span>
+        </div>
+        <div class="form-group password-field"><input v-model="confirmPassword" :type="showConfirmPassword ? 'text' : 'password'" required placeholder=" " minlength="6" /><label>Confirm Password</label><span class="toggle-icon" @click="showConfirmPassword = !showConfirmPassword">
+            {{ showConfirmPassword ? '🙈' : '👁️' }}
+          </span></div>
         <div class="form-group"><input v-model="referral_code" type="text" placeholder=" " /><label>Referral Code (optional)</label></div>
 
         <div class="checkbox">
@@ -102,6 +119,20 @@ const signUp = async () => {
   align-items: center;
   font-family: 'Segoe UI', sans-serif;
 }
+.password-field {
+  position: relative;
+}
+
+.toggle-icon {
+  position: absolute;
+  top: 50%;
+  right: 0.75rem;
+  transform: translateY(-50%);
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: #888;
+}
+
 
 .form-wrapper {
   width: 100%;
