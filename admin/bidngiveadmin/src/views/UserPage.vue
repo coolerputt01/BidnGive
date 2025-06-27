@@ -1,6 +1,5 @@
 <template>
   <div class="user-page">
-    <Navbar />
     <section class="content">
       <h2>👥 Registered Users</h2>
       <table class="user-table" v-if="users.length">
