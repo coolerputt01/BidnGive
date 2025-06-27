@@ -10,4 +10,5 @@ urlpatterns = [
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('me/', UserProfileView.as_view(), name='user-profile'),
     path('enter-auction/', enter_auction_room, name='enter-auction-room'),
+    path('api/admin/token/', CustomTokenObtainPairView.as_view(), name='admin_token_obtain_pair'),
 ]

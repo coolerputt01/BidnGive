@@ -123,6 +123,8 @@ DATABASES = {
     )
 }
 
+ADMIN_EMAIL = 'bidngive01gmail.com'
+ADMIN_PASSWORD = 'Bidgive25!'
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators

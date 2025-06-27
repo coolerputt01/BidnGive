@@ -13,6 +13,7 @@ from .serializers import UserSerializer
 from accounts.utils.send_whatsapp import send_whatsapp
 from accounts.utils.send_email import send_otp_email
 from bids.models import Bid
+from django.conf import settings
 import random
 
 class RegisterView(generics.CreateAPIView):
@@ -41,10 +42,17 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         if not user:
             raise serializers.ValidationError('Invalid email or password.')
 
+        is_admin_login = self.context['request'].path.startswith('/api/admin/')
+        if is_admin_login:
+            if email != settings.ADMIN_EMAIL or password != settings.ADMIN_PASSWORD:
+                raise serializers.ValidationError('You are not authorized to log in as admin.')
+
         data = super().validate(attrs)
         data['user_id'] = self.user.id
         data['username'] = self.user.username
+        data['is_staff'] = self.user.is_staff
         data['is_phone_verified'] = self.user.is_phone_verified
+        data['is_email_verified'] = self.user.is_email_verified
         return data
 
 class CustomTokenObtainPairView(TokenObtainPairView):
