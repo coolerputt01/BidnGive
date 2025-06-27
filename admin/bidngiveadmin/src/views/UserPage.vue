@@ -50,7 +50,7 @@ const headers = { Authorization: `Bearer ${token}` }
 
 const fetchUsers = async () => {
   try {
-    const res = await axios.get('https://bidngive.onrender.com/api/accounts/all-users/', { headers })
+    const res = await axios.get('https://bidngive.onrender.com/api/admin/admin/all-users/', { headers })
     users.value = res.data
   } catch {
     toast.error('Failed to fetch users')
