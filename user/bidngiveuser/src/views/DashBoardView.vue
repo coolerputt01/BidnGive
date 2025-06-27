@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { toast } from 'vue3-toastify';
 import axios from 'axios';
 
 const username = ref('');
@@ -11,6 +12,7 @@ const marketStatus = ref('closed');
 const nextAuctionTime = ref('');
 const referralCode = ref('');
 const isAuctionRoom = ref(false);
+const joiningAuction = ref(false);
 
 const router = useRouter();
 
@@ -20,18 +22,6 @@ const auctionUrl = "https://bidngive.onrender.com/api/admin/auction/status/";
 const userUrl = "https://bidngive.onrender.com/api/accounts/me/";
 
 let intervalId = null;
-
-async function fetchAuctionData() {
-  try {
-    const res = await axios.get(auctionUrl);
-    const seconds = res.data.remaining_seconds;
-    marketStatus.value = res.data.market_status;
-    nextAuctionTime.value = res.data.next_auction;
-    startCountdown(seconds);
-  } catch (err) {
-    console.error("Failed to fetch auction status", err);
-  }
-}
 
 function startCountdown(initialSeconds) {
   let remaining = initialSeconds;
@@ -50,9 +40,43 @@ function startCountdown(initialSeconds) {
   }, 1000);
 }
 
+async function fetchAuctionData() {
+  try {
+    const res = await axios.get(auctionUrl);
+    const seconds = res.data.remaining_seconds;
+    marketStatus.value = res.data.market_status;
+    nextAuctionTime.value = res.data.next_auction;
+    startCountdown(seconds);
+  } catch (err) {
+    console.error("Failed to fetch auction status", err);
+  }
+}
+
+async function joinAuctionRoom() {
+  const token = localStorage.getItem("access_token");
+  const headers = { Authorization: `Bearer ${token}` };
+
+  if (isAuctionRoom.value) {
+    toast.info("You've already joined the auction room.");
+    return;
+  }
+
+  joiningAuction.value = true;
+  try {
+    await axios.patch(userUrl, { is_auction_room: true }, { headers });
+    isAuctionRoom.value = true;
+    toast.success("✅ You have successfully joined the auction room.");
+  } catch (err) {
+    console.error("Failed to join auction room", err);
+    toast.error("Failed to join auction room.");
+  } finally {
+    joiningAuction.value = false;
+  }
+}
+
 function copyCode() {
   navigator.clipboard.writeText(referralCode.value).then(() => {
-    alert("Referral code copied!");
+    toast.success("Referral code copied!");
   });
 }
 
@@ -69,12 +93,6 @@ onMounted(async () => {
     username.value = userRes.data.username || '';
     referralCode.value = userRes.data.referral_code || '';
     isAuctionRoom.value = userRes.data.is_auction_room;
-
-    // If not in auction room, patch it
-    if (!isAuctionRoom.value) {
-      await axios.patch(userUrl, { is_auction_room: true }, { headers });
-      isAuctionRoom.value = true;
-    }
   } catch (err) {
     console.error("User fetch failed", err);
   }
@@ -100,50 +118,65 @@ onUnmounted(() => {
   clearInterval(intervalId);
 });
 </script>
+
 <template>
   <main style="background-color: #ebebd3ff;">
     <section style="margin-bottom: 12%;">
+      <!-- Header -->
       <div style="display: flex; justify-content: space-between; align-items: center; padding: 24px;">
         <div style="line-height: 8px;">
           <h2 style="font-size: 1.2em; font-weight: 600;">Hello, {{ username }}!</h2>
           <p style="font-size: 0.9em;">Welcome back</p>
         </div>
-        <div>
-          <img src="/icons/notification-on.svg" alt="Notifications Icon" style="width: 1.8em; height: 1.8em;">
-        </div>
+        <img src="/icons/notification-on.svg" alt="Notifications Icon" style="width: 1.8em; height: 1.8em;">
       </div>
 
-      <section style="display: flex; justify-content: center; align-items: center; flex-direction: column;">
-        <div style="text-align: center; display: flex; justify-content: center; align-items: center; border-radius: 3px;">
-          <span style="color: #004f28; background-color: #e0ffe0; font-size: 0.9em; padding: 4px; font-weight: 600; border-radius: 6px;">
-            ⏰ Next auction starts in {{ countdown }}
-          </span>
-        </div>
+      <!-- Countdown & Market Status -->
+      <section style="display: flex; flex-direction: column; align-items: center;">
+        <span style="color: #004f28; background-color: #e0ffe0; font-size: 0.9em; padding: 4px 8px; font-weight: 600; border-radius: 6px;">
+          ⏰ Next auction starts in {{ countdown }}
+        </span>
 
-        <div style="margin-top: 4%; border-radius: 3px; background-color: #95190C; padding: 12px; width: 80%;">
-          <div>
-            <div style="display: flex; justify-content: space-between; align-items: center; color: #fff;">
-              <p style="font-size: 1.3em; color: #fff;">Market Status</p>
-              <span style="background-color: #191919; border-radius: 50px; padding: 5px 10px; font-size: 0.9em;">Market {{ marketStatus }}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; color: #fff;">
-              <p>🕐 Next Auction: {{ nextAuctionTime }}</p>
-              <p>{{ countdown }}</p>
-            </div>
-            <div style="text-align: center;">
-              <button :disabled="marketStatus === 'closed'" style="width: 60vw; padding: 10px; background-color: #fff; font-weight: 550; border-radius: 50px; border: none;">
-                {{ marketStatus === 'closed' ? 'Auction Closed' : 'Auction' }}
-              </button>
-            </div>
+        <div style="margin-top: 4%; background-color: #95190C; padding: 12px; width: 80%; border-radius: 12px;">
+          <div style="color: #fff; display: flex; justify-content: space-between; margin-bottom: 10px;">
+            <p style="font-size: 1.3em;">Market Status</p>
+            <span style="background-color: #191919; border-radius: 50px; padding: 5px 10px;">Market {{ marketStatus }}</span>
+          </div>
+          <div style="color: #fff; display: flex; justify-content: space-between;">
+            <p>🕐 Next Auction: {{ nextAuctionTime }}</p>
+            <p>{{ countdown }}</p>
+          </div>
+
+          <div style="margin-top: 12px; text-align: center;">
+            <button
+              v-if="!isAuctionRoom && marketStatus === 'open'"
+              :disabled="joiningAuction"
+              @click="joinAuctionRoom"
+              style="width: 60vw; padding: 10px; background-color: #fff; font-weight: 600; border-radius: 50px; border: none; cursor: pointer;"
+            >
+              {{ joiningAuction ? 'Joining...' : 'Join Auction Room' }}
+            </button>
+
+            <p v-else-if="isAuctionRoom && marketStatus === 'open'" style="color: #e0ffe0; font-size: 0.95em; margin-top: 10px;">
+              ✅ You are in the Auction Room
+            </p>
+
+            <button
+              v-else
+              disabled
+              style="width: 60vw; padding: 10px; background-color: #ccc; font-weight: 600; border-radius: 50px; border: none;"
+            >
+              Auction Closed
+            </button>
           </div>
         </div>
 
-        <div style="margin-top: 4%; border-radius: 12px; background-color: #191919; padding: 20px; width: 80%; max-width: 600px; margin-inline: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-          <p style="font-size: 1.2em; color: #fff; font-weight: 600; margin-bottom: 10px;">
-            <img src="/icons/moneybag.svg" alt="Bid Icon" style="width: 1.3em; height: 1.3em; margin-right: 6px;" />
-            Ongoing Bids
+        <!-- Ongoing Bids Card -->
+        <div style="margin-top: 4%; background-color: #191919; padding: 20px; width: 80%; border-radius: 12px;">
+          <p style="color: #fff; font-size: 1.2em; font-weight: 600;">
+            <img src="/icons/moneybag.svg" style="width: 1.3em; margin-right: 6px;" /> Ongoing Bids
           </p>
-          <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
             <span style="color: #fff; font-size: 1.5em; font-weight: bold;">{{ bids }}</span>
             <button @click="viewBid" style="padding: 10px 20px; background-color: #fff; color: #191919; font-weight: 600; border-radius: 50px; border: none; cursor: pointer;">
               View Bid
@@ -151,41 +184,31 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <div style="margin-top: 4%; border-radius: 12px; background-color: #e0ffe0; padding: 20px; width: 80%; max-width: 600px; margin-inline: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-          <p style="font-size: 1.2em; color: #004f28; font-weight: 600; margin-bottom: 16px;">🎁 Referral + Daily Bonus</p>
+        <!-- Referral + Wallet Card -->
+        <div style="margin-top: 4%; background-color: #e0ffe0; padding: 20px; width: 80%; border-radius: 12px;">
+          <p style="font-size: 1.2em; color: #004f28; font-weight: 600;">🎁 Referral + Daily Bonus</p>
           <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
-            <div style="flex: 1; min-width: 120px;">
-              <p style="color: #004f28; font-size: 0.9em; margin-bottom: 4px;">Bonus</p>
-              <span style="font-size: 1.5em; font-weight: bold; color: #004f28;">₦{{ wallet }}</span>
+            <div>
+              <p style="color: #004f28; font-size: 0.9em;">Bonus</p>
+              <span style="font-size: 1.5em; font-weight: bold;">₦{{ wallet }}</span>
             </div>
-            <div style="flex: 1 1 100%; text-align: right;">
-              <button style="padding: 10px 20px; background-color: #17a35e; color: #fff; font-weight: 600; border-radius: 50px; border: none; cursor: pointer;" @click="router.push('/withdraw')">
-                Withdraw
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div style="margin-top: 4%; border-radius: 12px; background-color: #fff; padding: 20px; width: 80%; max-width: 600px; margin-inline: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-          <p style="font-size: 1.2em; color: #17a35e; font-weight: 600; margin-bottom: 10px;">📢 Invite & Earn</p>
-          <p style="color: #444; font-size: 0.95em; margin-bottom: 10px;">
-            Share your referral code and earn ₦500 for every user that joins and makes a bid.
-          </p>
-          <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-            <input type="text" readonly :value="referralCode" style="flex: 1; min-width: 200px; padding: 10px; border-radius: 6px; border: 1px solid #ccc;" />
-            <button @click="copyCode" style="padding: 10px 16px; background-color: #17a35e; color: #fff; font-weight: 600; border: none; border-radius: 6px; cursor: pointer;">
-              Copy Code
+            <button @click="router.push('/withdraw')" style="padding: 10px 20px; background-color: #17a35e; color: #fff; font-weight: 600; border-radius: 50px; border: none;">
+              Withdraw
             </button>
           </div>
         </div>
 
-        <section style="margin-top: 2%; padding: 13px;">
-          <section style="display: flex; justify-content: center; align-items: center;">
-            <span class="contact" style="position: fixed; right: 4%; bottom: 23%; padding: 20px; border-radius: 50%; background-color: #191919; display: flex; align-items: center; justify-content: center; box-shadow: 9px 4px 5px 0px rgba(0,0,0,0.3);">
-              <img src="/icons/whatsapp.svg" alt="Bid icon" style="width: 2em; height: 2em;">
-            </span>
-          </section>
-        </section>
+        <!-- Referral Code -->
+        <div style="margin-top: 4%; background-color: #fff; padding: 20px; width: 80%; border-radius: 12px;">
+          <p style="font-size: 1.2em; color: #17a35e; font-weight: 600;">📢 Invite & Earn</p>
+          <p style="color: #444; font-size: 0.95em;">Share your referral code and earn ₦500 for every user that joins and makes a bid.</p>
+          <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <input readonly :value="referralCode" style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 6px;" />
+            <button @click="copyCode" style="padding: 10px 16px; background-color: #17a35e; color: #fff; font-weight: 600; border-radius: 6px; cursor: pointer;">
+              Copy Code
+            </button>
+          </div>
+        </div>
       </section>
     </section>
   </main>

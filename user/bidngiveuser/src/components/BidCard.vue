@@ -37,23 +37,30 @@
     </div>
 
     <div class="card-footer">
-      <button
-        v-if="bid.status === 'paid' && bid.can_recommit"
-        class="btn-primary"
-        @click="$emit('action', bid)"
-      >
-        🔁 Recommit
-      </button>
+  <button
+    v-if="bid.status === 'paid' && bid.can_recommit"
+    class="btn-primary"
+    @click="$emit('action', bid)"
+  >
+    🔁 Recommit
+  </button>
 
-      <button
-        v-if="bid.status === 'pending'"
-        class="btn-danger"
-        @click="cancelBid"
-      >
-        ❌ Cancel Bid
-      </button>
-    </div>
-  </div>
+  <button
+    v-if="bid.status === 'pending'"
+    class="btn-danger"
+    @click="cancelBid"
+  >
+    ❌ Cancel Bid
+  </button>
+
+  <button
+    v-if="bid.status === 'completed' && bid.can_recommit"
+    class="btn-primary"
+    @click="handleWithdraw"
+  >
+    💸 Withdraw Returns
+  </button>
+</div>
 </template>
 
 <script setup>
@@ -94,6 +101,25 @@ const cancelBid = async () => {
     toast.error('Failed to cancel bid.')
   }
 }
+
+const handleWithdraw = async () => {
+  try {
+    const response = await axios.post(
+      `https://bidngive.onrender.com/api/bids/`,
+      {
+        amount: props.bid.amount,
+        plan: props.bid.plan,
+        can_recommit: true // Optional flag to indicate this is a reinvestment
+      },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    toast.success("Withdrawal initiated. You're now queued for another bid.");
+    emit('refresh');
+  } catch (err) {
+    toast.error("Withdrawal failed. Try again.");
+  }
+};
+
 </script>
 
 <style scoped>

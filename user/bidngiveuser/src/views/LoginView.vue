@@ -23,26 +23,24 @@ const login = async () => {
       password: password.value,
     });
 
-    const { access, refresh , is_phone_verified} = response.data;
+    const { access, refresh, is_phone_verified } = response.data;
 
-    // Optionally store user info or tokens
     localStorage.setItem("access_token", access);
     localStorage.setItem("refresh_token", refresh);
     localStorage.setItem("userInfo", JSON.stringify({ username: username.value }));
 
     if (!is_phone_verified) {
-      // ✅ Send WhatsApp OTP right after login
       await axios.post("https://bidngive.onrender.com/api/accounts/send-whatsapp-otp/", {}, {
         headers: { Authorization: `Bearer ${access}` }
       });
       toast.success("OTP sent to your WhatsApp.");
-      console.log("it worked")
     }
 
     toast.success("Login successful!");
-    router.push('/dashboard'); // change this to your app’s homepage
+    router.push('/dashboard');
   } catch (err) {
     toast.error("Invalid credentials or user does not exist");
+    console.log("hi")
   } finally {
     loading.value = false;
   }
@@ -50,69 +48,181 @@ const login = async () => {
 </script>
 
 <template>
-  <main style="background-color: #EBEBD3;width:100vw;height: 100vh;overflow-x: hidden;">
-      <section style="display: flex;justify-content: center;align-items: center;width: 100%;height: 100%;">
-        <form style="background-color: #fff;border-radius: 13px;padding: 3%;width: 70%;height: 80%;box-shadow: 10px 10px 32px -13px rgba(0,0,0,0.1657);display: flex;justify-content: space-between;align-items: center;">
-          <section style="width: 100%;">
-            <div>
-              <h1 style="font-size: 2em;font-weight: 650;">Login</h1>
-            </div>
-            <div class="inputs" style="margin-top: 3%;">
-              <div class="input-val" style="display: flex;justify-content: flex-start;align-items: center;border-bottom: 2px solid grey;width: 50%;">
-                <label for="email"><img src="/icons/email.svg" alt="Person Email" style="width: 1.2em;height: 1.2em;"></label>
-                <input type="email" v-model="username" placeholder="Your Email" style="outline: none;border: none;padding: 12px;width: 100%;font-size: 1em;">
-              </div>
-              <div class="input-val" style="display: flex;justify-content: flex-start;align-items: center;border-bottom: 2px solid grey;width: 50%;">
-                <label for="password"><img src="/icons/lock-closed.svg" alt="Person Password" style="width: 1.2em;height: 1.2em;"></label>
-                <input type="password" v-model="password" placeholder="Your Password" style="outline: none;border: none;padding: 12px;width: 100%;font-size: 1em;" minlength="6">
-              </div>
-              <div style="display: flex;justify-content: flex-start;align-items: center;margin-top: 4%;">
-                <button style="width: 25vw;height: 3em;color: #fff;outline: none;border: none;background-color: #04724D;cursor: pointer;text-align: center;" @click.prevent="login" :disabled="loading">
-                  <span v-if="!loading">Login</span>
-                  <div v-else class="loader"></div>
-                </button>
-              </div>
-              <div class="redirect" style="font-size: 0.9em;text-align: left;width: 100%;margin-top: 5%;">Don't have an account?<a href="#" @click="router.push('signup')"> Sign up</a></div>
-            </div>
-          </section>
-        </form>
-      </section>
+  <main class="page">
+    <div class="form-wrapper">
+      <header class="form-header">
+        <div class="logo">Bidn<span>Give</span></div>
+        <h1>Sign In</h1>
+        <p>Login to your account</p>
+      </header>
+
+      <form @submit.prevent="login" class="login-form">
+        <div class="form-group">
+          <input v-model="username" type="email" id="email" required placeholder=" " />
+          <label for="email">Email</label>
+        </div>
+
+        <div class="form-group">
+          <input v-model="password" type="password" id="password" minlength="6" required placeholder=" " />
+          <label for="password">Password</label>
+        </div>
+
+        <button :disabled="loading" class="submit-btn">
+          <span v-if="!loading">Login</span>
+          <span v-else class="loader"></span>
+        </button>
+
+        <p class="redirect">
+          Don’t have an account?
+          <a @click.prevent="router.push('/signup')">Sign up</a>
+        </p>
+      </form>
+    </div>
   </main>
 </template>
 
 <style scoped>
-input::placeholder {
-  margin-left: 0.4em;
+.page {
+  height: 100vh;
+  width: 100vw;
+  background-color: #fdfdfc; /* clean solid tone */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: 'Segoe UI', sans-serif;
 }
-.inputs > *{
-  margin-bottom: 2%;
+
+.form-wrapper {
+  width: 100%;
+  max-width: 400px;
+  padding: 1rem 2rem;
+  display: flex;
+  flex-direction: column;
 }
-button:hover {
-  transition: all 0.3s;
-  opacity: 0.8;
+
+.logo {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #04724D;
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.5px;
 }
+.logo span {
+  color: #222;
+}
+.form-header {
+  width: 100%;
+}
+.form-header > * {
+  text-align: center !important;
+}
+
+.form-header h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #222;
+  margin-bottom: 0.2rem;
+}
+
+.form-header p {
+  font-size: 0.95rem;
+  color: #666;
+  margin-bottom: 1.8rem;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-group {
+  position: relative;
+  width: 100%;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 1.1rem 0.75rem 0.5rem;
+  font-size: 1rem;
+  border: none;
+  border-bottom: 2px solid #ccc;
+  background: transparent;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.form-group label {
+  position: absolute;
+  top: 1rem;
+  left: 0.75rem;
+  font-size: 1rem;
+  color: #777;
+  pointer-events: none;
+  transition: all 0.2s ease;
+}
+
+.form-group input:focus + label,
+.form-group input:not(:placeholder-shown) + label {
+  top: 0.3rem;
+  font-size: 0.8rem;
+  color: #04724D;
+}
+
+.form-group input:focus {
+  border-bottom: 2px solid #04724D;
+}
+
+.submit-btn {
+  background-color: #04724D;
+  color: white;
+  padding: 0.9rem;
+  font-size: 1rem;
+  font-weight: 500;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.3s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.submit-btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
 .loader {
-  border: 3px solid rgb(172, 172, 172); /* Light grey */
-  border-top: 3px solid #fff; /* Blue */
-  border-radius: 50%;
   width: 20px;
   height: 20px;
-  animation: spin 2s linear infinite;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top: 3px solid #fff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
 }
+
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
-@media (max-width:480px) {
-  form {
-    width: 100% !important;
-    height: 60% !important;
-  }
-  .redirect {
-    width: 100% !important;
-  }
-  .input-val {
-    width: 70% !important;
-  }
+
+.redirect {
+  text-align: center;
+  font-size: 0.9rem;
+  color: #555;
+  margin-top: 1rem;
+}
+
+.redirect a {
+  color: #04724D;
+  font-weight: 600;
+  margin-left: 4px;
+  cursor: pointer;
 }
 </style>

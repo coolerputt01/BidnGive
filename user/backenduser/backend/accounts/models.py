@@ -15,6 +15,7 @@ class User(AbstractUser):
     is_staff = models.BooleanField(default=False)
     phone_otp = models.CharField(max_length=6, null=True, blank=True)
     email_otp = models.CharField(max_length=6, null=True, blank=True)
+    in_auction_room = models.BooleanField(default=False)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['phone_number']

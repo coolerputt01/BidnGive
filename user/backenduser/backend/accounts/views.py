@@ -11,11 +11,24 @@ from django.contrib.auth import authenticate
 from .models import User
 from .serializers import UserSerializer
 from accounts.utils.send_whatsapp import send_whatsapp
+from accounts.utils.send_email import send_email_otp
+from bids.models import Bid
 import random
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
+
+    def perform_create(self, serializer):
+        user = serializer.save()
+
+        # Generate and save OTP
+        otp = str(random.randint(100000, 999999))
+        user.email_otp = otp
+        user.save()
+
+        # Send email OTP
+        send_email_otp(user.email, otp)
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     username_field = 'email'  # 👈 enables email login
@@ -54,6 +67,7 @@ class VerifyEmailOTPView(APIView):
             return Response({"error": "Invalid OTP."}, status=status.HTTP_400_BAD_REQUEST)
 
         # OTP matched
+
         user.is_email_verified = True
         user.email_otp = None
         user.save()
@@ -72,6 +86,23 @@ class UserProfileView(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def enter_auction_room(request):
+    user = request.user
+
+    # Check if the user has pending bids
+    has_pending = Bid.objects.filter(user=user, status='pending').exists()
+
+    if not has_pending:
+        return Response({"message": "You must have at least one pending bid to join the auction room."}, status=400)
+
+    # Update user status
+    user.in_auction_room = True
+    user.save()
+
+    return Response({"message": "You have entered the auction room."})
 
 class SendWhatsAppOTP(APIView):
     permission_classes = [IsAuthenticated]

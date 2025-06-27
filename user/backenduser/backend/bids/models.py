@@ -18,10 +18,10 @@ class Bid(models.Model):
     payment_proof = models.ImageField(upload_to='proofs/', null=True, blank=True)
     sender_confirmed = models.BooleanField(default=False)
     receiver_confirmed = models.BooleanField(default=False)
-    in_auction_room = models.BooleanField(default=False)
     receiver_account = models.CharField(max_length=20, null=True, blank=True)
     receiver_bank = models.CharField(max_length=50, null=True, blank=True)
     receiver_phone = models.CharField(max_length=15, null=True, blank=True)
+    can_recommit =  models.BooleanField(default=False)
 
 
     def is_expired(self):

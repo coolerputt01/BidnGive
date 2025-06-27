@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { toast } from 'vue3-toastify';
 import axios from 'axios';
@@ -7,21 +7,21 @@ import axios from 'axios';
 const router = useRouter();
 const apiUrl = "https://bidngive.onrender.com/api/accounts/register/";
 
-const username = ref('')
-const email = ref('')
-const phone_number = ref('')
-const password = ref('')
-const confirmPassword = ref('')
-const referral_code = ref('')
-const loading = ref(false)
+const username = ref('');
+const email = ref('');
+const phone_number = ref('');
+const password = ref('');
+const confirmPassword = ref('');
+const referral_code = ref('');
+const loading = ref(false);
 
 const signUp = async () => {
   if (password.value !== confirmPassword.value) {
-    toast.error("Passwords do not match!")
-    return
+    toast.error("Passwords do not match!");
+    return;
   }
 
-  loading.value = true
+  loading.value = true;
 
   try {
     const response = await axios.post(apiUrl, {
@@ -29,123 +29,222 @@ const signUp = async () => {
       email: email.value,
       phone_number: phone_number.value,
       password: password.value,
-      referral_code: referral_code.value || undefined
-    })
+      referral_code: referral_code.value || undefined,
+    });
 
-    toast.success("Account created! Redirecting...", {
-      autoClose: 1000,
-      position: toast.POSITION.TOP_RIGHT
-    })
-    console.log(response.data)
+    toast.success("Account created! Redirecting...");
 
-    setTimeout(() => {
     localStorage.setItem("userInfo", JSON.stringify({
       username: username.value,
       email: email.value,
     }));
+
+    setTimeout(() => {
       router.push('/otp');
-    }, 1500)
+    }, 1500);
   } catch (error) {
     if (error.response?.data) {
       for (const [key, messages] of Object.entries(error.response.data)) {
-        toast.error(`${key}: ${messages[0]}`)
+        toast.error(`${key}: ${messages[0]}`);
       }
     } else {
-      toast.error("An error occurred. Please try again.")
+      toast.error("An error occurred. Please try again.");
     }
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 </script>
 
 <template>
-  <main style="background-color: #EBEBD3;width:100vw;height: 100vh;overflow-x: hidden;">
-      <section style="display: flex;justify-content: center;align-items: center;width: 100%;height: 100%;">
-        <form style="background-color: #fff;border-radius: 13px;padding: 3%;width: 70%;height: 90%;box-shadow: 10px 10px 32px -13px rgba(0,0,0,0.1657);display: flex;justify-content: space-between;align-items: center;">
-          <section style="width: 100%;">
-            <div>
-              <h1 style="font-size: 2em;font-weight: 650;">Signup</h1>
-            </div>
-            <div class="inputs" style="margin-top: 3%;">
-              <div class="input-val" style="display: flex;justify-content: flex-start;align-items: center;border-bottom: 2px solid grey;width: 50%;">
-                <label for="fullname"><img src="/icons/person.svg" alt="Person Fullname" style="width: 1.2em;height: 1.2em;"></label>
-                <input type="text" v-model="username" placeholder="Your Fullname" style="outline: none;border: none;padding: 12px;width: 100%;font-size: 1em;">
-              </div>
+  <main class="page">
+    <div class="form-wrapper">
+      <header class="form-header">
+        <div class="logo">Bidn<span>Give</span></div>
+        <h1>Create an Account</h1>
+        <p>Join the BidnGive community</p>
+      </header>
 
-              <div class="input-val" style="display: flex;justify-content: flex-start;align-items: center;border-bottom: 2px solid grey;width: 50%;">
-                <label for="email"><img src="/icons/email.svg" alt="Person Email" style="width: 1.2em;height: 1.2em;"></label>
-                <input type="email" v-model="email" placeholder="Your Email" style="outline: none;border: none;padding: 12px;width: 100%;font-size: 1em;">
-              </div>
+      <form class="login-form" @submit.prevent="signUp">
+        <div class="form-group"><input v-model="username" type="text" required placeholder=" " /><label>Full Name</label></div>
+        <div class="form-group"><input v-model="email" type="email" required placeholder=" " /><label>Email</label></div>
+        <div class="form-group"><input v-model="phone_number" type="text" required placeholder=" " maxlength="11" /><label>Phone Number</label></div>
+        <div class="form-group"><input v-model="password" type="password" required placeholder=" " minlength="6" /><label>Password</label></div>
+        <div class="form-group"><input v-model="confirmPassword" type="password" required placeholder=" " minlength="6" /><label>Confirm Password</label></div>
+        <div class="form-group"><input v-model="referral_code" type="text" placeholder=" " /><label>Referral Code (optional)</label></div>
 
-              <div class="input-val" style="display: flex;justify-content: flex-start;align-items: center;border-bottom: 2px solid grey;width: 50%;">
-                <label for="phoneNumber"><img src="/icons/phone.svg" alt="Person Phone number" style="width: 1.2em;height: 1.2em;"></label>
-                <input type="text" v-model="phone_number" placeholder="Your Phone number" style="outline: none;border: none;padding: 12px;width: 100%;font-size: 1em;" maxlength="11">
-              </div>
+        <div class="checkbox">
+          <input type="checkbox" id="tos" required />
+          <label for="tos">I agree to the <a @click.prevent="router.push('/terms-of-service')">Terms of Service</a></label>
+        </div>
 
-              <div class="input-val" style="display: flex;justify-content: flex-start;align-items: center;border-bottom: 2px solid grey;width: 50%;">
-                <label for="password"><img src="/icons/lock-closed.svg" alt="Person Password" style="width: 1.2em;height: 1.2em;"></label>
-                <input type="password" v-model="password" placeholder="Your Password" style="outline: none;border: none;padding: 12px;width: 100%;font-size: 1em;" minlength="6">
-              </div>
+        <button type="submit" class="submit-btn" :disabled="loading">
+          <span v-if="!loading">Register</span>
+          <span v-else class="loader"></span>
+        </button>
 
-              <div class="input-val" style="display: flex;justify-content: flex-start;align-items: center;border-bottom: 2px solid grey;width: 50%;">
-                <label for="password"><img src="/icons/locked.svg" alt="Person Password" style="width: 1.2em;height: 1.2em;"></label>
-                <input type="password" v-model="confirmPassword" placeholder="Repeat your password" style="outline: none;border: none;padding: 12px;width: 100%;font-size: 1em;" minlength="6">
-              </div>
-              <div class="input-val" style="display: flex;justify-content: flex-start;align-items: center;border-bottom: 2px solid grey;width: 50%;">
-                <label for="referral"><img src="/icons/person.svg" alt="Person Referral Code" style="width: 1.2em;height: 1.2em;"></label>
-                <input type="text" v-model="referral_code" placeholder="Referral Code" style="outline: none;border: none;padding: 12px;width: 100%;font-size: 1em;" minlength="6">
-              </div>
-              <div style="margin-top: 5%;">
-                <input type="checkbox" name="agreement"><label for="agreement">I agree all statements in <a href="#" @click="router.push('terms-of-service')">Terms of service</a></label>
-              </div>
-              <div style="display: flex;justify-content: flex-start;align-items: center;">
-                <button style="width: 25vw;height: 3em;color: #fff;outline: none;border: none;background-color: #04724D;cursor: pointer;text-align: center;display: flex;justify-content: center;align-items: center;" @click.prevent="signUp" :disabled="loading">
-                  <span v-if="!loading">Register</span>
-                  <div v-else class="loader"></div>
-                </button>
-              </div>
-              <div class="redirect" style="font-size: 0.9em;text-align: left;width: 100%;margin-top: 5%;">Already have an account?<a href="#" @click="router.push('/')"> Login</a></div>
-            </div>
-          </section>
-        </form>
-      </section>
+        <p class="redirect">
+          Already have an account?
+          <a @click.prevent="router.push('/')">Login</a>
+        </p>
+      </form>
+    </div>
   </main>
 </template>
 
 <style scoped>
-input::placeholder {
-  margin-left: 0.4em;
+.page {
+  height: 100vh;
+  width: 100vw;
+  background-color: #fdfdfc;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: 'Segoe UI', sans-serif;
 }
-.inputs > *{
-  margin-bottom: 2%;
+
+.form-wrapper {
+  width: 100%;
+  max-width: 400px;
+  padding: 1rem 2rem;
+  display: flex;
+  flex-direction: column;
 }
-button:hover {
-  transition: all 0.3s;
-  opacity: 0.8;
+
+.logo {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #04724D;
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.5px;
 }
+.logo span {
+  color: #222;
+}
+.form-header {
+  width: 100%;
+}
+.form-header > * {
+  text-align: center !important;
+}
+
+.form-header h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #222;
+  margin-bottom: 0.2rem;
+}
+
+.form-header p {
+  font-size: 0.95rem;
+  color: #666;
+  margin-bottom: 1.8rem;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+}
+
+.form-group {
+  position: relative;
+  width: 100%;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 1.1rem 0.75rem 0.5rem;
+  font-size: 1rem;
+  border: none;
+  border-bottom: 2px solid #ccc;
+  background: transparent;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.form-group label {
+  position: absolute;
+  top: 1rem;
+  left: 0.75rem;
+  font-size: 1rem;
+  color: #777;
+  pointer-events: none;
+  transition: all 0.2s ease;
+}
+
+.form-group input:focus + label,
+.form-group input:not(:placeholder-shown) + label {
+  top: 0.3rem;
+  font-size: 0.8rem;
+  color: #04724D;
+}
+
+.form-group input:focus {
+  border-bottom: 2px solid #04724D;
+}
+
+.checkbox {
+  font-size: 0.9rem;
+  color: #555;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.checkbox a {
+  color: #04724D;
+  font-weight: 500;
+  text-decoration: underline;
+}
+
+.submit-btn {
+  background-color: #04724D;
+  color: white;
+  padding: 0.9rem;
+  font-size: 1rem;
+  font-weight: 500;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.3s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.submit-btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
 .loader {
-  border: 3px solid rgb(172, 172, 172); /* Light grey */
-  border-top: 3px solid #fff; /* Blue */
-  border-radius: 50%;
   width: 20px;
   height: 20px;
-  animation: spin 2s linear infinite;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top: 3px solid #fff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
 }
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  to { transform: rotate(360deg); }
 }
-@media (max-width:480px) {
-  form {
-    width: 100% !important;
-    height: 60% !important;
-  }
-  .redirect {
-    width: 100% !important;
-  }
-  .input-val {
-    width: 70% !important;
-  }
+
+.redirect {
+  text-align: center;
+  font-size: 0.9rem;
+  color: #555;
+  margin-top: 1rem;
+}
+
+.redirect a {
+  color: #04724D;
+  font-weight: 600;
+  margin-left: 4px;
+  cursor: pointer;
 }
 </style>

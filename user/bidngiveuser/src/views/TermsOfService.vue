@@ -1,13 +1,14 @@
-<script>
-import { useRouter } from "vue-router";
-
-const router = useRouter();
+<script setup>
+import { useRouter } from 'vue-router'
+const router = useRouter()
 </script>
+
 <template>
   <section class="tos-wrapper">
+    <button class="back-button" @click="router.go(-1)">← Back</button>
+
     <div class="tos-container">
       <header class="tos-header">
-        <button class="back-button" @click="router.go(-1)">← Back</button>
         <h1>Terms of Service</h1>
         <p class="effective-date">Effective: <span>16th June, 2025</span></p>
       </header>
@@ -38,9 +39,9 @@ const router = useRouter();
           To use our services, you must create an account using your full name, email address, phone number, and valid Nigerian
           bank details. We do not use OAuth or social login services.
         </p>
-        <div class="card">
-          <strong>Your Responsibility:</strong> Keep your login credentials secure. You are responsible for all activity on your account.
-        </div>
+        <p class="bg-note">
+          <strong>Responsibility:</strong> Keep your login credentials secure. You are responsible for all activity on your account.
+        </p>
       </section>
 
       <section class="tos-section">
@@ -57,9 +58,9 @@ const router = useRouter();
           Our platform is meant for legitimate investment activities. Users must not use the service for any kind of scam, fraud,
           or illegal financial manipulation.
         </p>
-        <div class="warning">
+        <p class="bg-warning">
           ⚠️ <strong>Important:</strong> Fraudulent activity will result in immediate suspension or permanent account ban.
-        </div>
+        </p>
       </section>
 
       <section class="tos-section">
@@ -93,67 +94,60 @@ const router = useRouter();
         <p>
           If you have any questions or concerns about these Terms of Service, please contact us at:
           <br />
-          <span class="highlight">[Your Contact Placeholder]</span>
+          <span class="highlight">bidngive01@gmail.com</span>
         </p>
       </section>
     </div>
   </section>
 </template>
 
-<script setup>
-import { useRouter } from 'vue-router'
-const router = useRouter()
-</script>
-
 <style scoped>
 .tos-wrapper {
-  background: #f5f5f5;
-  padding: 4rem 1rem;
+  background: #f7f7f5;
+  padding: 3rem 1rem;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.back-button {
+  align-self: flex-start;
+  margin-bottom: 1rem;
+  margin-left: 1rem;
+  background-color: transparent;
+  color: #04724d;
+  border: 2px solid #04724d;
+  border-radius: 999px;
+  padding: 0.45rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.back-button:hover {
+  background-color: #04724d;
+  color: white;
 }
 
 .tos-container {
-  max-width: 840px;
+  max-width: 800px;
   width: 100%;
-  background: #fff;
-  padding: 3rem 2rem;
-  border-radius: 12px;
-  border: 1px solid #eee;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+  padding: 2rem;
+  font-family: "Segoe UI", sans-serif;
+  background-color: transparent;
   color: #222;
 }
 
 .tos-header {
   text-align: center;
-  border-bottom: 1px solid #e0e0e0;
-  padding-bottom: 1.5rem;
   margin-bottom: 2rem;
-  position: relative;
-}
-
-.back-button {
-  position: absolute;
-  left: 0;
-  top: 0;
-  background: #04724dff;
-  color: #fff;
-  border: none;
-  padding: 0.5rem 1.2rem;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.back-button:hover {
-  background: #035c3eff;
 }
 
 .tos-header h1 {
-  font-size: 2.4rem;
-  color: #04724dff;
+  font-size: 2.2rem;
+  color: #04724d;
   margin-bottom: 0.4rem;
 }
 
@@ -163,48 +157,69 @@ const router = useRouter()
 }
 
 .effective-date span {
-  color: #04724dff;
+  color: #04724d;
   font-weight: 600;
 }
 
 .tos-section {
-  margin-bottom: 2.5rem;
+  margin-bottom: 2.2rem;
 }
 
 .tos-section h2 {
   font-size: 1.4rem;
-  color: #04724dff;
-  margin-bottom: 0.75rem;
+  color: #04724d;
+  margin-bottom: 0.6rem;
 }
 
 .tos-section p {
   font-size: 1.05rem;
   line-height: 1.7;
-  margin-bottom: 1rem;
+  color: #333;
 }
 
 .highlight {
-  color: #04724dff;
+  color: #04724d;
   font-weight: 600;
 }
 
-.card {
-  background: #f0fdf9;
-  border-left: 4px solid #04724dff;
-  padding: 1rem 1rem;
-  border-radius: 6px;
-  margin-top: 0.5rem;
+.bg-note {
+  background-color: #e7f8f2;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-top: 1rem;
   font-size: 0.98rem;
-  color: #044233;
+  color: #044f39;
 }
 
-.warning {
-  background: #fff5f5;
-  border-left: 4px solid #cc0000;
-  padding: 1rem 1rem;
-  border-radius: 6px;
-  font-size: 0.98rem;
-  color: #660000;
+.bg-warning {
+  background-color: #fff5f5;
+  padding: 1rem;
+  border-radius: 8px;
   margin-top: 1rem;
+  font-size: 0.98rem;
+  color: #b71c1c;
+}
+
+@media (max-width: 600px) {
+  .tos-container {
+    padding: 1rem;
+  }
+
+  .back-button {
+    font-size: 0.85rem;
+    margin-left: 0;
+  }
+
+  .tos-header h1 {
+    font-size: 1.8rem;
+  }
+
+  .tos-section h2 {
+    font-size: 1.2rem;
+  }
+
+  .tos-section p {
+    font-size: 1rem;
+  }
 }
 </style>

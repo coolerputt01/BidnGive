@@ -9,16 +9,6 @@ from .models import Bid
 from .serializers import BidSerializer , BidPaymentConfirmSerializer
 from django.utils import timezone
 
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def enter_auction_room(request):
-    user = request.user
-    bids = Bid.objects.filter(user=user, status='pending', in_auction_room=False)
-    if not bids.exists():
-        return Response({"message": "No pending bids to enter."})
-    bids.update(in_auction_room=True)
-    return Response({"message": f"{bids.count()} bid(s) entered auction room."})
-
 class BidViewSet(viewsets.ModelViewSet):
     queryset = Bid.objects.all()
     serializer_class = BidSerializer

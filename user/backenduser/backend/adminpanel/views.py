@@ -3,8 +3,10 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAdminUser
 from bids.models import Bid
 from referral.models import ReferralBonus ,WithdrawalRequest
+from rest_framework_simplejwt.tokens import RefreshToken
 from .models import MergeSettings
 from datetime import datetime, time, timedelta
+from accounts.models import User
 
 class AuctionStatusView(APIView):
     def get(self, request):
@@ -103,3 +105,108 @@ class ManualMergeView(APIView):
             bid.merged_at = datetime.now()
             bid.save()
         return Response({"message": f"{len(bids)} bid(s) merged manually."})
+
+class UpdateMergeSettingsView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        settings = MergeSettings.objects.last()
+        return Response({
+            "morning_time": settings.morning_time.strftime('%H:%M'),
+            "evening_time": settings.evening_time.strftime('%H:%M'),
+        })
+
+    def patch(self, request):
+        settings = MergeSettings.objects.last()
+        morning = request.data.get("morning_time")
+        evening = request.data.get("evening_time")
+
+        if morning:
+            settings.morning_time = morning
+        if evening:
+            settings.evening_time = evening
+
+        settings.save()
+
+class CreateInvestmentView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def post(self, request):
+        email = request.data.get('email')
+        amount = request.data.get('amount')
+        plan = request.data.get('plan')
+
+        if not (email and amount and plan):
+            return Response({'error': 'Email, amount, and plan are required.'}, status=400)
+
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found.'}, status=404)
+
+        Bid.objects.create(user=user, amount=amount, plan=plan, status='merged')  # Directly mark as merged
+
+        return Response({'message': f'Investment of ₦{amount} created for {email} under "{plan}" plan.'})
+    
+class CancelInvestmentView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def post(self, request):
+        bid_id = request.data.get("bid_id")
+        if not bid_id:
+            return Response({'error': 'Bid ID is required.'}, status=400)
+
+        try:
+            bid = Bid.objects.get(id=bid_id)
+            if bid.status in ['cancelled', 'paid']:
+                return Response({'error': 'Cannot cancel this bid.'}, status=400)
+            bid.status = 'cancelled'
+            bid.save()
+            return Response({'message': f'Bid #{bid_id} cancelled.'})
+        except Bid.DoesNotExist:
+            return Response({'error': 'Bid not found.'}, status=404)
+
+class BlockUserView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def post(self, request):
+        email = request.data.get("email")
+        try:
+            user = User.objects.get(email=email)
+            user.is_disabled = True
+            user.save()
+            return Response({"message": f"{user.username} has been blocked."})
+        except User.DoesNotExist:
+            return Response({"error": "User not found"}, status=404)
+
+class UnblockUserView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def post(self, request):
+        email = request.data.get("email")
+        try:
+            user = User.objects.get(email=email)
+            user.is_disabled = False
+            user.save()
+            return Response({"message": f"{user.username} has been unblocked."})
+        except User.DoesNotExist:
+            return Response({"error": "User not found"}, status=404)
+
+class LoginAsUserView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def post(self, request):
+        email = request.data.get("email")
+        try:
+            user = User.objects.get(email=email)
+            if user.is_disabled:
+                return Response({"error": "This user is blocked."}, status=403)
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+                "username": user.username,
+                "email": user.email,
+            })
+        except User.DoesNotExist:
+            return Response({"error": "User not found"}, status=404)

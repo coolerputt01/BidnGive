@@ -56,4 +56,35 @@ const router = createRouter({
   ],
 });
 
+router.beforeEach(async (to, from, next) => {
+  const token = localStorage.getItem('access_token');
+  
+  // Skip token check for some routes like login/signup
+  if (['/login', '/signup', '/otp'].includes(to.path)) {
+    return next();
+  }
+
+  // If token doesn't exist or is invalid, redirect to login
+  if (!token) {
+    return next({ name: 'login' });
+  }
+
+  try {
+    // Try to verify token by hitting a protected API endpoint
+    const response = await axios.get('https://bidngive.onrender.com/api/wallet/balance', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    if (response.status === 200) {
+      return next(); // Token is valid, proceed to the route
+    }
+  } catch (error) {
+    console.error('Token verification failed:', error);
+  }
+
+  // If token is invalid, remove from storage and redirect to login
+  localStorage.removeItem('access_token');
+  return next({ name: 'login' });
+});
+
 export default router
