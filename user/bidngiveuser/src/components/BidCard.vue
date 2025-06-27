@@ -61,6 +61,7 @@
     💸 Withdraw Returns
   </button>
 </div>
+</div>
 </template>
 
 <script setup>

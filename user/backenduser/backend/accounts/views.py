@@ -11,7 +11,7 @@ from django.contrib.auth import authenticate
 from .models import User
 from .serializers import UserSerializer
 from accounts.utils.send_whatsapp import send_whatsapp
-from accounts.utils.send_email import send_email_otp
+from accounts.utils.send_email import send_otp_email
 from bids.models import Bid
 import random
 
@@ -28,7 +28,7 @@ class RegisterView(generics.CreateAPIView):
         user.save()
 
         # Send email OTP
-        send_email_otp(user.email, otp)
+        send_otp_email(user.email, otp)
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     username_field = 'email'  # 👈 enables email login

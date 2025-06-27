@@ -8,6 +8,7 @@ import MergeSettings from '@/views/MergeSettings.vue'
 import CreateInvestment from '@/views/CreateInvestment.vue'
 import CancelInvestment from '@/views/CancelInvestment.vue'
 import UserManagement from '@/views/UserManagement.vue'
+import UserPage from '@/views/UserPage.vue'
 
 const routes = [
   { path: '/', name: 'Login', component: Login },
@@ -19,6 +20,7 @@ const routes = [
   { path: '/create-investment', name: 'CreateInvestment', component: CreateInvestment },
   { path: '/cancel-investment', name: 'CancelInvestment', component: CancelInvestment },
   { path: '/user-details', name: 'UserManagement',component: UserManagement},
+  { path: '/user-page', name: 'UserPage',component: UserPage},
   ]
 
 const router = createRouter({
