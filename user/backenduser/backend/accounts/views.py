@@ -32,34 +32,36 @@ class RegisterView(generics.CreateAPIView):
         send_otp_email(user.email, otp)
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
-    username_field = 'email'  # 👈 enables email login
+    username_field = 'email'
 
     def validate(self, attrs):
         email = attrs.get('email')
         password = attrs.get('password')
+        request = self.context.get('request')
 
-        print("EMAIL:", email)
-        print("PASSWORD:", password)
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
 
-        user = authenticate(request=self.context.get('request'), username=email, password=password)
-        if not user:
+        try:
+            user = User.objects.get(email=email)
+            if not user.check_password(password):
+                raise serializers.ValidationError('Invalid email or password.')
+        except User.DoesNotExist:
             raise serializers.ValidationError('Invalid email or password.')
 
-        is_admin_login = self.context['request'].path.startswith('/api/admin/')
-        if is_admin_login:
-            print("ADMIN EMAIL:", settings.ADMIN_EMAIL)
-            print("ADMIN PASSWORD:", settings.ADMIN_PASSWORD)
+        # Admin route check
+        if request.path.startswith('/api/admin/'):
             if email != settings.ADMIN_EMAIL or password != settings.ADMIN_PASSWORD:
                 raise serializers.ValidationError('You are not authorized to log in as admin.')
 
         self.user = user
 
         data = super().validate(attrs)
-        data['user_id'] = self.user.id
-        data['username'] = self.user.username
-        data['is_staff'] = self.user.is_staff
-        data['is_phone_verified'] = self.user.is_phone_verified
-        data['is_email_verified'] = self.user.is_email_verified
+        data['user_id'] = user.id
+        data['username'] = user.username
+        data['is_staff'] = user.is_staff
+        data['is_phone_verified'] = user.is_phone_verified
+        data['is_email_verified'] = user.is_email_verified
         return data
 
 class CustomTokenObtainPairView(TokenObtainPairView):

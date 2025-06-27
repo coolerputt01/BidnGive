@@ -40,11 +40,11 @@ const form = ref({
 const loginAdmin = async () => {
   loading.value = true
   try {
-    const res = await axios.post('https://bidngive.onrender.com/api/accounts/token/', form.value)
+    const res = await axios.post('https://bidngive.onrender.com/api/admin/token/', form.value)
     localStorage.setItem('access_token', res.data.access)
 
     const userInfo = await axios.get('https://bidngive.onrender.com/api/accounts/me/', {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${access_token}` }
     });
 
     if (!userInfo.data.is_staff) {
