@@ -44,7 +44,7 @@ const loginAdmin = async () => {
     localStorage.setItem('access_token', res.data.access)
 
     const userInfo = await axios.get('https://bidngive.onrender.com/api/accounts/me/', {
-        headers: { Authorization: `Bearer ${access_token}` }
+        headers: { Authorization: `Bearer ${res.data.access}` }
     });
 
     if (!userInfo.data.is_staff) {
@@ -54,7 +54,7 @@ const loginAdmin = async () => {
     }
     toast.success('Login successful!')
 
-    router.push('/admin-dashboard')
+    router.push('/dashboard')
   } catch (err) {
     console.log(err)
     toast.error('Invalid login credentials')
