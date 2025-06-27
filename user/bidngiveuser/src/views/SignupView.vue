@@ -84,11 +84,11 @@ const signUp = async () => {
           />
           <label>Password</label>
           <span class="toggle-icon" @click="showPassword = !showPassword">
-            <img :src="showPassword ? eyeClosed : eye" alt="toggle password" />
+            <img :src="showPassword ? eye : eyeClosed" alt="toggle password" />
           </span>
         </div>
         <div class="form-group password-field"><input v-model="confirmPassword" :type="showConfirmPassword ? 'text' : 'password'" required placeholder=" " minlength="6" /><label>Confirm Password</label><span class="toggle-icon" @click="showConfirmPassword = !showConfirmPassword">
-            <img :src="showPassword ? eyeClosed : eye" alt="toggle password" />
+            <img :src="showPassword ? eye : eyeClosed" alt="toggle password" />
           </span></div>
         <div class="form-group"><input v-model="referral_code" type="text" placeholder=" " /><label>Referral Code (optional)</label></div>
 
