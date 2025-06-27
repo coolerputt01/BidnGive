@@ -34,7 +34,8 @@ ALLOWED_HOSTS = ['bidngive.onrender.com', 'localhost', '127.0.0.1']
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  
     "https://bidngive.surge.sh",
-    'https://bidngiveadmin.surge.sh'# Your Vite/Vue frontend dev server
+    'https://bidngiveadmin.surge.sh',
+    'https://bidngiveuser.onrender.com'# Your Vite/Vue frontend dev server
     # Add more if needed
 ]
 
