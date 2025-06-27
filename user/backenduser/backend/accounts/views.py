@@ -24,7 +24,7 @@ class RegisterView(generics.CreateAPIView):
         user = serializer.save()
 
         # Generate and save OTP
-        otp = str(random.randint(100000, 999999))
+        otp = str(random.randint(1000, 9999))
         user.email_otp = otp
         user.save()
 
