@@ -140,7 +140,7 @@ onUnmounted(() => {
         <div style="margin-top: 4%; background-color: #95190C; padding: 12px; width: 80%; border-radius: 12px;">
           <div style="color: #fff; display: flex; justify-content: space-between; margin-bottom: 10px;">
             <p style="font-size: 1.3em;">Market Status</p>
-            <span style="background-color: #191919; border-radius: 50px; padding: 5px 10px;">Market {{ marketStatus }}</span>
+            <span style="background-color: #191919; border-radius: 50px; padding: 5px 10px;display: flex;justify-content: center;align-items: center;">Market {{ marketStatus }}</span>
           </div>
           <div style="color: #fff; display: flex; justify-content: space-between;">
             <p>🕐 Next Auction: {{ nextAuctionTime }}</p>
