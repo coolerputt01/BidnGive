@@ -60,7 +60,7 @@ router.beforeEach(async (to, from, next) => {
   const token = localStorage.getItem('access_token');
   
   // Skip token check for some routes like login/signup
-  if (['/login', '/signup', '/otp'].includes(to.path)) {
+  if (['login', 'signup', 'otp'].includes(to.name)) {
     return next();
   }
 
