@@ -47,6 +47,8 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             if email != settings.ADMIN_EMAIL or password != settings.ADMIN_PASSWORD:
                 raise serializers.ValidationError('You are not authorized to log in as admin.')
 
+        self.user = user
+
         data = super().validate(attrs)
         data['user_id'] = self.user.id
         data['username'] = self.user.username

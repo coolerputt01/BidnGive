@@ -56,6 +56,7 @@ const loginAdmin = async () => {
 
     router.push('/admin-dashboard')
   } catch (err) {
+    console.log(err)
     toast.error('Invalid login credentials')
   } finally {
     loading.value = false
