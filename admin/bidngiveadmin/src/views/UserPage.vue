@@ -41,7 +41,6 @@
 import { onMounted, ref } from 'vue'
 import axios from 'axios'
 import { toast } from 'vue3-toastify'
-import Navbar from '@/components/Navbar.vue'
 
 const users = ref([])
 const token = localStorage.getItem('access_token')
