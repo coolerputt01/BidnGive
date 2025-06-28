@@ -5,6 +5,8 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser
+from wallet.models import Wallet
+from wallet.models import WalletTransaction
 from .models import Bid
 from .serializers import BidSerializer , BidPaymentConfirmSerializer
 from django.utils import timezone
@@ -77,6 +79,76 @@ class ConfirmReceiverView(APIView):
                 return Response({"error": "You can't confirm your own bid as receiver."}, status=403)
             bid.receiver_confirmed = True
             bid.save()
+            return Response({"message": "Payment confirmed by receiver."})
+        except Bid.DoesNotExist:
+            return Response({"error": "Bid not found."}, status=404)
+
+# bids/views.py
+class WithdrawBidView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        amount = request.data.get('amount')
+        user = request.user
+
+        if not amount:
+            return Response({'error': 'Amount is required'}, status=400)
+
+        try:
+            amount = float(amount)
+        except ValueError:
+            return Response({'error': 'Invalid amount format'}, status=400)
+
+        # Check wallet balance
+        wallet, _ = Wallet.objects.get_or_create(user=user)
+        if wallet.balance < amount:
+            return Response({'error': 'Insufficient wallet balance'}, status=400)
+
+        # Deduct immediately to prevent double-withdrawal
+        wallet.balance -= amount
+        wallet.save()
+
+        # Create a withdrawal bid
+        Bid.objects.create(
+            user=user,
+            amount=amount,
+            plan='withdrawal',  # optional placeholder
+            type='withdrawal',
+            status='pending'
+        )
+
+        return Response({'message': f'Withdrawal bid of ₦{amount} created successfully.'})
+
+class ConfirmReceiverView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, bid_id):
+        try:
+            bid = Bid.objects.get(id=bid_id, status='merged')
+            if bid.user == request.user:
+                return Response({"error": "You can't confirm your own bid as receiver."}, status=403)
+
+            bid.receiver_confirmed = True
+            bid.status = 'paid'
+            bid.save()
+
+            # If it's a withdrawal bid, auto-cancel and credit wallet
+            if bid.type == 'withdrawal':
+                bid.status = 'cancelled'
+                bid.save()
+
+                wallet, _ = Wallet.objects.get_or_create(user=bid.user)
+                wallet.balance += float(bid.amount)
+                wallet.save()
+
+                WalletTransaction.objects.create(
+                    user=bid.user,
+                    wallet=wallet,
+                    amount=bid.amount,
+                    type='credit',
+                    description='Wallet withdrawal via P2P'
+                )
+
             return Response({"message": "Payment confirmed by receiver."})
         except Bid.DoesNotExist:
             return Response({"error": "Bid not found."}, status=404)

@@ -11,7 +11,6 @@
     <ul :class="['nav-links', { open: isOpen }]">
       <li><router-link to="/dashboard">Dashboard</router-link></li>
       <li><router-link to="/pending-bids">Pending Bids</router-link></li>
-      <li><router-link to="/withdrawals">Withdrawals</router-link></li>
       <li><router-link to="/merge-settings">Merge Settings</router-link></li>
       <li><router-link to="/create-investment">Create Investment</router-link></li>
       <li><router-link to="/cancel-investment">Cancel Investment</router-link></li>

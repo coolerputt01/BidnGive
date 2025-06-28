@@ -8,3 +8,14 @@ def send_otp_email(user_email, otp):
     recipient_list = [user_email]
     
     send_mail(subject, message, from_email, recipient_list)
+
+def send_ban_notification(user_email):
+    subject = 'Your BidnGive account has been banned'
+    message = (
+        'Due to valid reasons your account has been banned and needs to be reactivated '
+        'to continue using the website.'
+    )
+    from_email = settings.DEFAULT_FROM_EMAIL
+    recipient_list = [user_email]
+
+    send_mail(subject, message, from_email, recipient_list)

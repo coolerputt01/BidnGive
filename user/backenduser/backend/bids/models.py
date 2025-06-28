@@ -7,10 +7,16 @@ class Bid(models.Model):
         ('50_24', '50% in 24 hours'),
     ]
 
+    TYPE_CHOICES = [
+        ('investment', 'Investment'),
+        ('withdrawal', 'Withdrawal'),
+    ]
+
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     plan = models.CharField(max_length=10, choices=PLAN_CHOICES)
     expected_return = models.DecimalField(max_digits=10, decimal_places=2)
+    type = models.CharField(max_length=20, choices=TYPE_CHOICES, default='investment')
     status = models.CharField(max_length=20, default='pending')  # pending, merged, paid, confirmed, cancelled
     created_at = models.DateTimeField(auto_now_add=True)
     merged_with = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='merged_bids')

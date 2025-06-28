@@ -85,35 +85,31 @@ class MarkWithdrawalPaidView(APIView):
         except WithdrawalRequest.DoesNotExist:
             return Response({'error': 'Withdrawal not found or already processed.'}, status=404)
 
-class PendingWithdrawalsView(APIView):
-    permission_classes = [IsAdminUser]
-
-    def get(self, request):
-        pending = WithdrawalRequest.objects.filter(status='pending').select_related('user')
-        data = [
-            {
-                'id': w.id,
-                'user': w.user.username,
-                'email': w.user.email,
-                'amount': float(w.amount),
-                'requested_at': w.requested_at,
-            } for w in pending
-        ]
-        return Response(data)
-
 class ManualMergeView(APIView):
     permission_classes = [IsAdminUser]
 
     def post(self, request):
         bid_ids = request.data.get("bid_ids", [])
-        bids = Bid.objects.filter(status='pending', in_auction_room=True)
-        if not bids:
+        if not bid_ids:
+            return Response({"detail": "No bid IDs provided."}, status=400)
+
+        bids = Bid.objects.filter(
+            id__in=bid_ids,
+            status='pending',
+            user__in_auction_room=True
+        )
+
+        if not bids.exists():
             return Response({"detail": "No valid pending bids found."}, status=400)
+
+        merged_count = 0
         for bid in bids:
             bid.status = "merged"
             bid.merged_at = datetime.now()
             bid.save()
-        return Response({"message": f"{len(bids)} bid(s) merged manually."})
+            merged_count += 1
+
+        return Response({"message": f"{merged_count} bid(s) merged manually."})
 
 class UpdateMergeSettingsView(APIView):
     permission_classes = [IsAdminUser]

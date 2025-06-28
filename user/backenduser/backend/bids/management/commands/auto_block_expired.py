@@ -2,6 +2,7 @@ from django.core.management.base import BaseCommand
 from datetime import timedelta
 from django.utils import timezone
 from bids.models import Bid
+from accounts.utils.send_email import send_ban_notification
 
 class Command(BaseCommand):
     help = 'Auto-block users whose merged bids expired without payment proof'
@@ -22,11 +23,13 @@ class Command(BaseCommand):
         for bid in expired_bids:
             if bid.user:  # ensure user exists
                 if bid.user.is_active:
+                    send_ban_notification(bid.user.email)
                     bid.user.is_active = False
                     bid.user.save()
                 bid.status = 'expired'
                 bid.save()
                 count += 1
+                
                 self.stdout.write(f"⛔ User {bid.user.username} blocked for bid #{bid.id}")
             else:
                 self.stdout.write(f"⚠️ Skipped bid #{bid.id} (no user assigned)")
