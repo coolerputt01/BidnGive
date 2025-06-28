@@ -2,7 +2,7 @@
   <main class="merge-info-page">
     <section class="header">
       <h2>Merged Bids</h2>
-      <p>Please pay the receiver within 5 hours and upload proof of payment.</p>
+      <p>Below are your active merges. Please take necessary action within 5 hours of merging.</p>
     </section>
 
     <div v-if="bids.length" class="bids-container">
@@ -22,14 +22,12 @@
           </div>
           <div class="info-row">
             <span class="label">Time Left</span>
-            <span class="value countdown">{{ countdowns[bid.id] }}</span>
+            <span class="value countdown">{{ countdowns[bid.id] || 'Loading...' }}</span>
           </div>
         </div>
 
         <div class="receiver-box">
           <h4>Receiver Details</h4>
-          <p><strong>Bank:</strong> {{ bid.receiver_bank }}</p>
-          <p><strong>Account:</strong> {{ bid.receiver_account }}</p>
           <p>
             <strong>Phone:</strong>
             <a :href="`https://wa.me/234${bid.receiver_phone}`" target="_blank" class="whatsapp-link">
@@ -189,7 +187,6 @@ onMounted(fetchBids)
   max-width: 720px;
   margin: auto;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
 }
 
 .details-grid {
@@ -287,7 +284,7 @@ input[type="file"] {
 }
 
 .btn:hover {
-  background-color:rgb(3, 197, 133);
+  background-color: rgb(3, 197, 133);
 }
 
 .confirm-btn {

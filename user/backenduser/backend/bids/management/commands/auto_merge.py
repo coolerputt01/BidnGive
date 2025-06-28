@@ -1,51 +1,51 @@
 from django.core.management.base import BaseCommand
-from bids.models import Bid
 from django.utils.timezone import now
+from bids.models import Bid
+from django.db import transaction
 
 class Command(BaseCommand):
-    help = 'Automatically merge pending bids into user pairs (different users only).'
+    help = 'Automatically merge eligible pending bids into pairs (must be different users).'
 
-    def handle(self, *args, **kwargs):
+    def handle(self, *args, **options):
         pending_bids = list(Bid.objects.filter(status='pending').order_by('created_at'))
 
         if len(pending_bids) < 2:
-            self.stdout.write("Not enough bids to merge.")
+            self.stdout.write("⚠️ Not enough bids to merge.")
             return
 
+        used = set()
         merged_count = 0
-        used_ids = set()
 
         for i in range(len(pending_bids)):
             bid1 = pending_bids[i]
-            if bid1.id in used_ids:
+            if bid1.id in used:
                 continue
 
             for j in range(i + 1, len(pending_bids)):
                 bid2 = pending_bids[j]
-                if bid2.id in used_ids or bid1.user == bid2.user:
+                if bid2.id in used or bid1.user == bid2.user:
                     continue
 
-                # Mark both as merged
-                bid1.status = bid2.status = 'merged'
-                bid1.merged_at = bid2.merged_at = now()
+                with transaction.atomic():
+                    # Merge logic
+                    bid1.status = bid2.status = 'merged'
+                    bid1.merged_at = bid2.merged_at = now()
+                    bid1.merged_with = bid2.user
+                    bid2.merged_with = bid1.user
 
-                # Set merged_with field
-                bid1.merged_with = bid2.user
-                bid2.merged_with = bid1.user
+                    # Set receiver (bid1 is receiving, bid2 is sending)
+                    bid2.receiver_account = bid1.user.account_number
+                    bid2.receiver_bank = bid1.user.bank_name  # Assumes user has this
+                    bid2.receiver_phone = bid1.user.phone_number
 
-                # Optional: set bank details for bid2 to pay bid1
-                bid2.receiver_account = bid1.user.account_number
-                bid2.receiver_bank = bid1.user.referred_by  # or any bank field you use
-                bid2.receiver_phone = bid1.user.phone_number
+                    bid1.save()
+                    bid2.save()
 
-                bid1.save()
-                bid2.save()
-
-                used_ids.update([bid1.id, bid2.id])
+                used.update([bid1.id, bid2.id])
                 merged_count += 2
-                break  # proceed to the next available bid
+                break  # Move to next available bid
 
-        if merged_count == 0:
-            self.stdout.write("No valid user pairs to merge.")
+        if merged_count:
+            self.stdout.write(self.style.SUCCESS(f"✅ {merged_count} bids merged successfully."))
         else:
-            self.stdout.write(self.style.SUCCESS(f"{merged_count} bids merged successfully."))
+            self.stdout.write("❌ No valid user pairs found to merge.")

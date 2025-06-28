@@ -1,154 +1,126 @@
-from rest_framework import viewsets, permissions, status , generics
+from rest_framework import viewsets, permissions, status, generics
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser
-from wallet.models import Wallet
-from wallet.models import WalletTransaction
-from .models import Bid
-from .serializers import BidSerializer , BidPaymentConfirmSerializer
-from django.utils import timezone
 from django.core.management import call_command
+from decimal import Decimal
 
-@api_view(['GET'])
-@permission_classes([AllowAny])
-def run_auto_merge(request):
-    if request.GET.get('key') != 'biddedkey':
-        return Response({'error': 'Unauthorized'}, status=403)
-    
-    call_command('auto_merge')
-    return Response({'status': 'Auto merge ran successfully'})
+from .models import Bid
+from .serializers import BidSerializer, PaymentProofSerializer, ConfirmPaymentSerializer
+from wallet.models import Wallet, WalletTransaction
 
-@api_view(['GET'])
-@permission_classes([AllowAny])
-def auto_block(request):
-    if request.GET.get('key') != 'expiredkey':
-        return Response({'error': 'Unauthorized'}, status=403)
-
-    call_command('auto_block_expired')
-    return Response({'status': 'Auto Block sent'})
 
 class BidViewSet(viewsets.ModelViewSet):
-    queryset = Bid.objects.all()
+    permission_classes = [IsAuthenticated]
     serializer_class = BidSerializer
-    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         return Bid.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
         user = self.request.user
-        has_pending = Bid.objects.filter(user=user).exclude(status='paid').exists()
+        has_unpaid_bid = Bid.objects.filter(user=user).exclude(status='paid').exists()
+        if has_unpaid_bid:
+            raise ValidationError("You already have a pending or unpaid bid.")
 
-        if has_pending:
-            raise ValidationError("You already have a pending bid.")
-        serializer.save(user=self.request.user)
+        amount = serializer.validated_data['amount']
+        plan = serializer.validated_data['plan']
+        expected_return = Decimal(amount) * Decimal('1.5') if plan == '50_24' else Decimal('0')
 
-    def partial_update(self, request, *args, **kwargs):
-        bid = self.get_object()
-        if 'payment_proof' in request.data:
-            bid.payment_proof = request.data['payment_proof']
-            bid.status = 'paid'
-            bid.save()
-        return Response(BidSerializer(bid).data)
+        serializer.save(user=user, expected_return=expected_return)
 
-        def destroy(self, request, *args, **kwargs):
-            bid = self.get_object()
-            if bid.status != 'pending':
-                return Response({'error': 'Only pending bids can be cancelled.'}, status=status.HTTP_400_BAD_REQUEST)
-            bid.delete()
-            return Response({'message': 'Bid cancelled.'}, status=status.HTTP_204_NO_CONTENT)
 
 class UploadProofView(generics.UpdateAPIView):
-    serializer_class = BidPaymentConfirmSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = PaymentProofSerializer
+    permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser]
 
     def get_queryset(self):
         return Bid.objects.filter(user=self.request.user, status='merged')
 
+
 class ConfirmReceiverView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request, bid_id):
         try:
-            bid = Bid.objects.get(id=bid_id, status='merged')
-            if bid.user == request.user:
-                return Response({"error": "You can't confirm your own bid as receiver."}, status=403)
-            bid.receiver_confirmed = True
-            bid.save()
-            return Response({"message": "Payment confirmed by receiver."})
+            bid = Bid.objects.get(id=bid_id)
         except Bid.DoesNotExist:
             return Response({"error": "Bid not found."}, status=404)
 
-# bids/views.py
+        if bid.user == request.user:
+            return Response({"error": "You can't confirm your own bid as receiver."}, status=403)
+
+        serializer = ConfirmPaymentSerializer(instance=bid, data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        # Handle wallet logic for withdrawals
+        if bid.type == 'withdrawal':
+            wallet, _ = Wallet.objects.get_or_create(user=bid.user)
+            wallet.balance += bid.amount
+            wallet.save()
+
+            WalletTransaction.objects.create(
+                user=bid.user,
+                wallet=wallet,
+                amount=bid.amount,
+                type='credit',
+                description='Wallet withdrawal via P2P'
+            )
+
+        return Response({"message": "Payment confirmed by receiver."})
+
+
 class WithdrawBidView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
         amount = request.data.get('amount')
-        user = request.user
 
         if not amount:
             return Response({'error': 'Amount is required'}, status=400)
 
         try:
-            amount = float(amount)
-        except ValueError:
+            amount = Decimal(amount)
+        except:
             return Response({'error': 'Invalid amount format'}, status=400)
 
-        # Check wallet balance
-        wallet, _ = Wallet.objects.get_or_create(user=user)
+        wallet, _ = Wallet.objects.get_or_create(user=request.user)
         if wallet.balance < amount:
-            return Response({'error': 'Insufficient wallet balance'}, status=400)
+            return Response({'error': 'Insufficient balance'}, status=400)
 
-        # Deduct immediately to prevent double-withdrawal
         wallet.balance -= amount
         wallet.save()
 
-        # Create a withdrawal bid
         Bid.objects.create(
-            user=user,
+            user=request.user,
             amount=amount,
-            plan='withdrawal',  # optional placeholder
+            plan='withdrawal',
             type='withdrawal',
+            expected_return=0,
             status='pending'
         )
 
-        return Response({'message': f'Withdrawal bid of ₦{amount} created successfully.'})
+        return Response({'message': f'₦{amount} withdrawal bid created successfully.'})
 
-class ConfirmReceiverView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
 
-    def post(self, request, bid_id):
-        try:
-            bid = Bid.objects.get(id=bid_id, status='merged')
-            if bid.user == request.user:
-                return Response({"error": "You can't confirm your own bid as receiver."}, status=403)
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def run_auto_merge(request):
+    if request.GET.get('key') != 'biddedkey':
+        return Response({'error': 'Unauthorized'}, status=403)
+    call_command('auto_merge')
+    return Response({'status': 'Auto merge completed.'})
 
-            bid.receiver_confirmed = True
-            bid.status = 'paid'
-            bid.save()
 
-            # If it's a withdrawal bid, auto-cancel and credit wallet
-            if bid.type == 'withdrawal':
-                bid.status = 'cancelled'
-                bid.save()
-
-                wallet, _ = Wallet.objects.get_or_create(user=bid.user)
-                wallet.balance += float(bid.amount)
-                wallet.save()
-
-                WalletTransaction.objects.create(
-                    user=bid.user,
-                    wallet=wallet,
-                    amount=bid.amount,
-                    type='credit',
-                    description='Wallet withdrawal via P2P'
-                )
-
-            return Response({"message": "Payment confirmed by receiver."})
-        except Bid.DoesNotExist:
-            return Response({"error": "Bid not found."}, status=404)
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def auto_block(request):
+    if request.GET.get('key') != 'expiredkey':
+        return Response({'error': 'Unauthorized'}, status=403)
+    call_command('auto_block_expired')
+    return Response({'status': 'Expired bids auto-block executed.'})

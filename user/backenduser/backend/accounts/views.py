@@ -6,7 +6,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from .serializers import RegisterSerializer
+from .serializers import RegisterSerializer , generate_otp
 from django.contrib.auth import authenticate
 from .models import User
 from .serializers import UserSerializer
@@ -23,13 +23,23 @@ class RegisterView(generics.CreateAPIView):
     def perform_create(self, serializer):
         user = serializer.save()
 
-        # Generate and save OTP
-        otp = str(random.randint(1000, 9999))
-        user.email_otp = otp
-        user.save()
-
         # Send email OTP
-        send_otp_email(user.email, otp)
+        send_otp_email(user.email, user.email_otp)
+
+class ResendEmailOTP(APIView):
+    def post(self, request):
+        email = request.data.get("email", "").strip().lower()
+        try:
+            user = User.objects.get(email=email)
+            if user.is_email_verified:
+                return Response({"message": "Email already verified."})
+            otp = generate_otp()
+            user.email_otp = otp
+            user.save()
+            send_otp_email(email, otp)
+            return Response({"message": "OTP resent to email."})
+        except User.DoesNotExist:
+            return Response({"error": "User not found."}, status=404)
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     username_field = 'email'
