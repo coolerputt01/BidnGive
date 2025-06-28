@@ -1,5 +1,5 @@
 <template>
-  <div v-if="bid" class="merged-bid-card">
+  <div class="merged-bid-card">
     <div class="header">
       <h3>Merged Bid — ₦{{ bid.amount.toLocaleString() }}</h3>
       <span class="status" :class="bid.status">{{ formatStatus(bid.status) }}</span>
@@ -15,7 +15,7 @@
       <h4>📨 You’ve been merged with:</h4>
       <ul>
         <li v-for="merge in bid.merges" :key="merge.id">
-          <span>{{ merge.user_name }} — 
+          <span>{{ merge.user_name }} —
             <a :href="`https://wa.me/${merge.phone}`" target="_blank">WhatsApp</a>
           </span>
         </li>
@@ -33,33 +33,18 @@
       <button class="withdraw-btn" @click="withdraw">💸 Withdraw Returns</button>
     </div>
   </div>
-
-  <p v-else>Loading bid...</p>
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref } from 'vue'
 import axios from 'axios'
 import { toast } from 'vue3-toastify'
 
-// Accept bidId as a prop
-const props = defineProps({ bidId: String })
-const bid = ref(null)
+const props = defineProps({ bid: Object })
+const emit = defineEmits(['action'])
+
 const token = localStorage.getItem('access_token')
 const selectedProof = ref(null)
-
-const fetchBid = async () => {
-  if (!props.bidId) return
-  try {
-    const res = await axios.get(`https://bidngive.onrender.com/api/bids/${props.bidId}/`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    bid.value = res.data
-    console.log(bid.value)
-  } catch (err) {
-    toast.error('Could not fetch bid details.')
-  }
-}
 
 const formatDate = (iso) => {
   const date = new Date(iso)
@@ -100,7 +85,7 @@ const submitProof = async () => {
 
   try {
     await axios.post(
-      `https://bidngive.onrender.com/api/bids/${props.bidId}/upload-proof/`,
+      `https://bidngive.onrender.com/api/bids/${props.bid.id}/upload-proof/`,
       formData,
       {
         headers: {
@@ -110,7 +95,7 @@ const submitProof = async () => {
       }
     )
     toast.success('Proof uploaded.')
-    fetchBid()
+    emit('action')  // notify parent to refetch bids
   } catch {
     toast.error('Failed to upload proof.')
   }
@@ -120,20 +105,15 @@ const withdraw = async () => {
   try {
     await axios.post(
       `https://bidngive.onrender.com/api/bids/withdraw/`,
-      { amount: bid.value.amount },
+      { amount: props.bid.amount },
       { headers: { Authorization: `Bearer ${token}` } }
     )
     toast.success('Withdrawal bid created.')
-    fetchBid()
+    emit('action')  // notify parent to refetch bids
   } catch (err) {
     toast.error('Withdrawal failed.')
   }
 }
-
-onMounted(fetchBid)
-
-watch(() => props.bidId, fetchBid, { immediate: true })
-
 </script>
 
 <style scoped>
@@ -143,7 +123,7 @@ watch(() => props.bidId, fetchBid, { immediate: true })
   border-radius: 12px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
   max-width: 600px;
-  margin: auto;
+  margin: 20px auto;
   font-family: Arial, sans-serif;
 }
 

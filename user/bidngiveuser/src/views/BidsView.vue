@@ -17,12 +17,15 @@
       </span>
     </div>
 
-    <!-- Bid Card -->
-    <BidCard
-      v-if="bids.length > 0"
-      :bid="bids[0]"
-      @action="handleBidAction"
-    />
+    <!-- Bid Cards -->
+    <div v-if="bids.length > 0">
+      <BidCard
+        v-for="bid in bids"
+        :key="bid.id"
+        :bid="bid"
+        @action="handleBidAction"
+      />
+    </div>
 
     <!-- No Bids Message -->
     <div v-else class="no-bids">
@@ -39,9 +42,9 @@
         :disabled="bids.length > 0 && bids[0].status !== 'paid'"
       >
         {{
-        bids.length > 0 && bids[0].status !== 'paid'
-              ? 'Pending Bid Exists'
-              : 'Create Bid'
+          bids.length > 0 && bids[0].status !== 'paid'
+            ? 'Pending Bid Exists'
+            : 'Create Bid'
         }}
       </button>
     </form>
@@ -151,7 +154,6 @@ const handleBidAction = async (bid) => {
         timeout: 4000,
       })
 
-      // Optional: Refresh bid list or reload page
       fetchBids()
     } catch (err) {
       console.error('Recommit failed:', err)
