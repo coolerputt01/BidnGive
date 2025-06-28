@@ -130,8 +130,10 @@ const withdraw = async () => {
   }
 }
 
-// Watch for changes to bidId (if dynamic)
+onMounted(fetchBid)
+
 watch(() => props.bidId, fetchBid, { immediate: true })
+
 </script>
 
 <style scoped>
