@@ -61,7 +61,7 @@ class PendingBidsView(APIView):
     permission_classes = [IsAdminUser]
 
     def get(self, request):
-        bids = Bid.objects.filter(status='pending', in_auction_room=True)
+        bids = Bid.objects.filter(status='pending', user__in_auction_room=True)
         data = [
             {
                 "id": b.id,
