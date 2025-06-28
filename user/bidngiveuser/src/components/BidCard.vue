@@ -34,7 +34,7 @@
     </div>
   </div>
 
-  <p v-else>Loading merged bid...</p>
+  <p v-else>Loading bid...</p>
 </template>
 
 <script setup>
@@ -55,6 +55,7 @@ const fetchBid = async () => {
       headers: { Authorization: `Bearer ${token}` }
     })
     bid.value = res.data
+    console.log(bid.value)
   } catch (err) {
     toast.error('Could not fetch bid details.')
   }

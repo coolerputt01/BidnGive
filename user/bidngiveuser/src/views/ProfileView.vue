@@ -19,7 +19,7 @@
 
       <div class="detail-item">
         <label>Phone Number</label>
-        <input type="tel" v-model="user.phone" disabled />
+        <input type="tel" v-model="user.phone_number" disabled />
       </div>
 
       <div class="detail-item">
