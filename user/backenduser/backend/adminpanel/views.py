@@ -13,6 +13,9 @@ from bids.models import Bid
 from bids.serializers import BidSerializer
 from referral.models import ReferralBonus, WithdrawalRequest
 from .models import MergeSettings
+from django.utils import timezone
+
+
 
 
 class AuctionStatusView(APIView):
@@ -26,13 +29,14 @@ class AuctionStatusView(APIView):
 
         def get_next_auction():
             today = now.date()
-            morning_dt = datetime.combine(today, morning)
-            evening_dt = datetime.combine(today, evening)
+            morning_dt = timezone.make_aware(datetime.combine(today, morning))
+            evening_dt = timezone.make_aware(datetime.combine(today, evening))
+
             if now_time < morning:
                 return morning_dt
             elif now_time < evening:
                 return evening_dt
-            return morning_dt + timedelta(days=1)
+            return timezone.make_aware(datetime.combine(today + timedelta(days=1), morning))
 
         def is_open_window(auction_time):
             end = (datetime.combine(now.date(), auction_time) + timedelta(minutes=30)).time()
@@ -47,6 +51,7 @@ class AuctionStatusView(APIView):
             "next_auction": next_time.strftime("%I:%M %p"),
             "remaining_seconds": remaining_seconds
         })
+
 
 
 class AllUsersView(APIView):
