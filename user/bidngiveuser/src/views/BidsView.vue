@@ -32,6 +32,17 @@
       <p>No bids available. Create one below.</p>
     </div>
 
+    <!-- Bid Information Section -->
+    <section class="bid-info">
+      <h3>📘 Bid Details</h3>
+      <ul>
+        <li><strong>Return Rate:</strong> 50% profit on your investment</li>
+        <li><strong>Duration:</strong> 24 hours before your return is processed</li>
+        <li><strong>Recommitment:</strong> 100% mandatory recommitment after each completed bid</li>
+        <li><strong>Payment System:</strong> Peer-to-peer (you will pay and be paid by other users directly)</li>
+      </ul>
+    </section>
+
     <!-- Create Bid Form -->
     <form class="create-form" @submit.prevent="submitBid">
       <label for="amount">Amount (₦):</label>
@@ -60,6 +71,7 @@ import BidCard from '@/components/BidCard.vue';
 const form = ref({ amount: '' })
 const bids = ref([])
 const auctionInfo = ref({ remaining_seconds: 0, market_status: '' })
+const loadingSubmit = ref(false)
 
 const fetchBids = async () => {
   const token = localStorage.getItem('access_token')
@@ -85,6 +97,8 @@ const fetchAuctionStatus = async () => {
 }
 
 const submitBid = async () => {
+  if (loadingSubmit.value) return;
+  loadingSubmit.value = true;
   const token = localStorage.getItem('access_token')
   if (bids.value.length > 0 && bids.value[0].status !== 'paid') {
     toast.warning('You already have a pending bid. Please wait or complete it.')
@@ -105,6 +119,7 @@ const submitBid = async () => {
     toast.success('Bid successfully created!')
     form.value.amount = ''
     fetchBids()
+    loadingSubmit.value = false;
   } catch (err) {
     console.error('Bid creation failed:', err)
     toast.error('Failed to create bid.')
@@ -208,6 +223,32 @@ const handleBidAction = async (bid) => {
 
 .status.closed {
   background-color: #95190c;
+}
+
+.bid-info {
+  background-color: #fff;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.bid-info h3 {
+  margin-bottom: 10px;
+  font-size: 1.1em;
+  font-weight: 700;
+  color: #17a35e;
+}
+
+.bid-info ul {
+  list-style: none;
+  padding-left: 0;
+  line-height: 1.6;
+}
+
+.bid-info li {
+  margin-bottom: 6px;
+  color: #444;
 }
 
 .bid-card {

@@ -37,8 +37,8 @@ onMounted(fetchBids);
 
 <template>
   <main class="cancel-container">
-    <h2>❌ Cancel Investments</h2>
-    <div v-if="bids.length === 0" class="empty">No active investments found.</div>
+    <h2>❌ Cancel Recommitment</h2>
+    <div v-if="bids.length === 0" class="empty">No active recommitment found.</div>
     <table v-else class="bid-table">
       <thead>
         <tr>

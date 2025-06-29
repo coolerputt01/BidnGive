@@ -25,12 +25,17 @@
             <span class="value countdown">{{ countdowns[bid.id] || 'Loading...' }}</span>
           </div>
         </div>
+        <p class="warning" v-if="countdowns[bid.id]?.includes('Expired')">
+        ⚠️ Your account may be banned due to late payment.
+      </p>
+
 
         <div class="receiver-box">
           <h4>Receiver Details</h4>
           <p>
             <strong>Phone:</strong>
-            <a :href="`https://wa.me/234${bid.receiver_phone}`" target="_blank" class="whatsapp-link">
+            <a :href="`https://wa.me/${bid.receiver_phone.startsWith('0') ? '234' + bid.receiver_phone.slice(1) : bid.receiver_phone}`"
+ target="_blank" class="whatsapp-link">
               {{ bid.receiver_phone }}
               <img src="/icons/whatsapp.svg" alt="WhatsApp" class="wa-icon" />
             </a>
@@ -40,6 +45,9 @@
         <div v-if="bid.status === 'merged'" class="upload-section">
           <label>Upload Payment Proof:</label>
           <input type="file" @change="e => handleFileChange(e, bid.id)" accept="image/*" />
+          <div v-if="fileMap[bid.id]">
+            <img :src="URL.createObjectURL(fileMap[bid.id])" class="preview" />
+          </div>
           <button class="btn" @click="() => uploadProof(bid.id)" :disabled="uploadingMap[bid.id]">
             {{ uploadingMap[bid.id] ? 'Uploading...' : 'Submit Payment Proof' }}
           </button>
