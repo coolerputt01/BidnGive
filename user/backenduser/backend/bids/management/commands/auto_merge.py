@@ -35,7 +35,7 @@ class Command(BaseCommand):
 
                     # Set receiver (bid1 is receiving, bid2 is sending)
                     bid2.receiver_account = bid1.user.account_number
-                    bid2.receiver_bank = bid1.user.bank_name  # Assumes user has this
+                    # bid2.receiver_bank = bid1.user.bank_name  ← Removed this line
                     bid2.receiver_phone = bid1.user.phone_number
 
                     bid1.save()
