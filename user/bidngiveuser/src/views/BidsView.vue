@@ -35,6 +35,7 @@
     <form class="create-form" @submit.prevent="submitBid">
       <label for="amount">Amount (₦):</label>
       <input type="number" id="amount" v-model="form.amount" required />
+      <span>Min: ₦10,000 Max: ₦500,000</span>
 
       <!-- Live Summary -->
       <div v-if="form.amount" class="live-summary">
@@ -94,9 +95,16 @@ const submitBid = async () => {
   if (loadingSubmit.value) return
   loadingSubmit.value = true
 
+  const amount = parseFloat(form.value.amount)
+  if (isNaN(amount) || amount < 10000) {
+    toast.error('Amount must be at least ₦10,000')
+    loadingSubmit.value = false
+    return
+  }
+
   const token = localStorage.getItem('access_token')
   const payload = {
-    amount: form.value.amount,
+    amount,
     plan: '50_24'
   }
 
@@ -116,6 +124,7 @@ const submitBid = async () => {
     loadingSubmit.value = false
   }
 }
+
 
 const formatTime = (seconds) => {
   const h = Math.floor(seconds / 3600)

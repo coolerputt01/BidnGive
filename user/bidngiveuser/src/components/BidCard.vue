@@ -33,6 +33,10 @@
     <div v-if="bid.status === 'completed' && bid.type !== 'withdrawal'" class="actions">
       <button class="withdraw-btn" @click="withdraw">💸 Withdraw Returns</button>
     </div>
+    <!-- Cancel Button -->
+    <div v-if="bid.status === 'pending'" class="actions">
+      <button class="cancel-btn" @click="cancelBid">❌ Cancel Bid</button>
+    </div>
   </div>
 </template>
 
@@ -118,9 +122,27 @@ const withdraw = async () => {
     toast.error('Withdrawal failed.')
   }
 }
+const cancelBid = async () => {
+  try {
+    await axios.delete(`https://bidngive.onrender.com/api/bids/${props.bid.id}/`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    toast.success('Bid cancelled successfully.')
+    emit('action')
+  } catch (err) {
+    toast.error('Failed to cancel bid.')
+  }
+}
 </script>
 
 <style scoped>
+.cancel-btn {
+  background-color: #f44336;
+}
+.cancel-btn:hover {
+  background-color: #d32f2f;
+}
+
 .merged-bid-card {
   background: #fff;
   padding: 22px;
