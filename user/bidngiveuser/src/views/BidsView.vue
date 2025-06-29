@@ -100,6 +100,10 @@ const submitBid = async () => {
     toast.error('Amount must be at least ₦10,000')
     loadingSubmit.value = false
     return
+  }else if(amount > 500000){
+    toast.error('Amount must be at most ₦500,000')
+    loadingSubmit.value = false
+    return 
   }
 
   const token = localStorage.getItem('access_token')

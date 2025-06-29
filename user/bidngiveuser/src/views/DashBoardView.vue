@@ -52,6 +52,33 @@ async function fetchAuctionData() {
   }
 }
 
+const tryClaimDailyBonus = async () => {
+  const token = localStorage.getItem('access_token')
+  const lastBonusDate = localStorage.getItem('last_bonus_date')
+  const today = new Date().toISOString().split('T')[0]
+
+  if (lastBonusDate === today) {
+    return  // Already claimed today
+  }
+
+  try {
+    const res = await axios.post('https://bidngive.onrender.com/api/wallet/daily-bonus/', {}, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+
+    toast.success(res.data.message + ` 🎁 ₦100! New Balance: ₦${res.data.balance.toLocaleString()}`)
+    localStorage.setItem('last_bonus_date', today)
+  } catch (err) {
+    // Already claimed or other error
+    if (err.response?.data?.message === "Already claimed today") {
+      localStorage.setItem('last_bonus_date', today)  // Still mark to avoid duplicate call
+    }
+  }
+}
+
+
 async function joinAuctionRoom() {
   const token = localStorage.getItem("access_token");
   const headers = { Authorization: `Bearer ${token}` };
@@ -85,6 +112,7 @@ function viewBid() {
 }
 
 onMounted(async () => {
+  tryClaimDailyBonus();
   const token = localStorage.getItem("access_token");
   const headers = { Authorization: `Bearer ${token}` };
 
@@ -192,7 +220,7 @@ onUnmounted(() => {
               <p style="color: #004f28; font-size: 0.9em;">Bonus</p>
               <span style="font-size: 1.5em; font-weight: bold;">₦{{ wallet }}</span>
             </div>
-            <button @click="router.push('/withdraw')" style="background-color: #17a35e; color: #fff; font-weight: 600; border-radius: 50px; border: none; display: flex;justify-content: center;flex: 0 0 auto;height: 2vh;padding: 1.3%;align-items: center;">
+            <button @click="router.push('/bid')" style="background-color: #17a35e; color: #fff; font-weight: 600; border-radius: 50px; border: none; display: flex;justify-content: center;flex: 0 0 auto;height: 2vh;padding: 1.3%;align-items: center;">
               Withdraw
             </button>
           </div>
