@@ -1,18 +1,21 @@
 <template>
   <div class="merged-bid-card">
     <div class="header">
-      <h3>Merged Bid — ₦{{ bid.amount.toLocaleString() }}</h3>
+      <h3>💼 Bid — ₦{{ bid.amount.toLocaleString() }}</h3>
       <span class="status" :class="bid.status">{{ formatStatus(bid.status) }}</span>
     </div>
 
     <div class="details">
-      <p><strong>Created:</strong> {{ formatDate(bid.created_at) }}</p>
-      <p><strong>Plan:</strong> {{ bid.plan }}</p>
-      <p><strong>Expected Return:</strong> ₦{{ calculateReturn(bid.amount, bid.plan) }}</p>
+      <div class="info"><strong>📆 Created:</strong> {{ formatDate(bid.created_at) }}</div>
+      <div class="info"><strong>📊 Plan:</strong> {{ bid.plan.replace('_', '% in ') + ' hrs' }}</div>
+      <div class="info"><strong>💰 Expected Return:</strong> ₦{{ bid.expected_return.toLocaleString() }}</div>
+      <div class="info"><strong>📈 Profit:</strong> ₦{{ profitAmount(bid.amount, bid.expected_return) }}</div>
+      <div class="info"><strong>📦 Type:</strong> {{ bid.type === 'investment' ? 'Investment' : 'Withdrawal' }}</div>
+      <div class="info" v-if="bid.status === 'merged'"><strong>⏳ Time Left:</strong> {{ timeLeft(bid.merged_at) }}</div>
     </div>
 
     <div v-if="bid.status === 'merged'" class="participants">
-      <h4>📨 You’ve been merged with:</h4>
+      <h4>📨 Merged With:</h4>
       <ul>
         <li v-for="merge in bid.merges" :key="merge.id">
           <span>{{ merge.user_name }} —
@@ -22,13 +25,11 @@
       </ul>
     </div>
 
-    <!-- Upload proof if merged -->
     <div v-if="bid.status === 'merged'" class="actions">
       <input type="file" @change="handleProof" />
       <button @click="submitProof">📤 Submit Payment Proof</button>
     </div>
 
-    <!-- Withdraw if completed (not withdrawal bid) -->
     <div v-if="bid.status === 'completed' && bid.type !== 'withdrawal'" class="actions">
       <button class="withdraw-btn" @click="withdraw">💸 Withdraw Returns</button>
     </div>
@@ -55,31 +56,34 @@ const formatDate = (iso) => {
   })
 }
 
-const calculateReturn = (amount, plan) => {
-  try {
-    const percent = parseFloat(plan.split('_')[0])
-    const profit = (amount * percent) / 100
-    return (amount + profit).toLocaleString()
-  } catch {
-    return 'N/A'
-  }
+const profitAmount = (amount, expected) => {
+  return (expected - amount).toLocaleString()
 }
 
 const formatStatus = (status) => ({
-  pending: 'Awaiting Merge',
-  merged: 'Merged, Awaiting Payment',
-  paid: 'Paid, Awaiting Confirmation',
-  completed: 'Completed',
-  expired: 'Expired'
+  pending: '🕒 Awaiting Merge',
+  merged: '🔗 Merged, Pay Now',
+  paid: '💳 Paid, Awaiting Confirmation',
+  completed: '✅ Completed',
+  expired: '⌛ Expired'
 })[status] || status
+
+const timeLeft = (mergedAt) => {
+  const merged = new Date(mergedAt)
+  const now = new Date()
+  const diff = 5 * 60 * 60 * 1000 - (now - merged)
+  if (diff <= 0) return 'Expired'
+  const hrs = Math.floor(diff / (1000 * 60 * 60))
+  const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+  return `${hrs}h ${mins}m remaining`
+}
 
 const handleProof = (e) => {
   selectedProof.value = e.target.files[0]
 }
 
 const submitProof = async () => {
-  if (!selectedProof.value) return toast.error('Please select a file.')
-
+  if (!selectedProof.value) return toast.error('Select a file.')
   const formData = new FormData()
   formData.append('proof', selectedProof.value)
 
@@ -95,9 +99,9 @@ const submitProof = async () => {
       }
     )
     toast.success('Proof uploaded.')
-    emit('action')  // notify parent to refetch bids
+    emit('action')
   } catch {
-    toast.error('Failed to upload proof.')
+    toast.error('Upload failed.')
   }
 }
 
@@ -108,8 +112,8 @@ const withdraw = async () => {
       { amount: props.bid.amount },
       { headers: { Authorization: `Bearer ${token}` } }
     )
-    toast.success('Withdrawal bid created.')
-    emit('action')  // notify parent to refetch bids
+    toast.success('Withdrawal created.')
+    emit('action')
   } catch (err) {
     toast.error('Withdrawal failed.')
   }
@@ -118,31 +122,31 @@ const withdraw = async () => {
 
 <style scoped>
 .merged-bid-card {
-  background: white;
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-  max-width: 600px;
-  margin: 20px auto;
-  font-family: Arial, sans-serif;
+  background: #fff;
+  padding: 22px;
+  border-radius: 14px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  max-width: 620px;
+  margin: 24px auto;
+  font-family: 'Segoe UI', sans-serif;
 }
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 12px;
 }
-
 .status {
-  padding: 5px 12px;
-  border-radius: 20px;
+  padding: 6px 14px;
+  border-radius: 18px;
+  font-size: 0.85em;
   font-weight: bold;
-  color: white;
+  color: #fff;
 }
-
 .status.pending {
   background-color: #ffc107;
-  color: black;
+  color: #000;
 }
 .status.merged {
   background-color: #17a35e;
@@ -154,13 +158,15 @@ const withdraw = async () => {
   background-color: #9e9e9e;
 }
 
-.details p {
+.details .info {
   margin: 6px 0;
+  font-size: 0.95em;
 }
 
 .participants ul {
   list-style: none;
   padding: 0;
+  margin: 10px 0;
 }
 .participants li {
   margin: 6px 0;
@@ -175,18 +181,20 @@ const withdraw = async () => {
 
 input[type="file"] {
   border: 1px solid #ccc;
-  padding: 8px;
+  padding: 10px;
   border-radius: 8px;
+  font-size: 0.95em;
 }
 
 button {
   background-color: #17a35e;
   color: white;
-  padding: 10px 16px;
+  padding: 12px 16px;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
+  transition: background-color 0.3s ease;
 }
 button:hover {
   background-color: #128f4a;
