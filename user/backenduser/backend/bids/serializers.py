@@ -7,7 +7,7 @@ class BidSerializer(serializers.ModelSerializer):
     counterparty_phone = serializers.SerializerMethodField()
     counterparty_account = serializers.SerializerMethodField()
     counterparty_bank = serializers.SerializerMethodField()
-    counterparty_role = serializers.SerializerMethodField()  # NEW
+    counterparty_role = serializers.SerializerMethodField()
     can_recommit = serializers.SerializerMethodField()
     role = serializers.SerializerMethodField()
 
@@ -19,12 +19,14 @@ class BidSerializer(serializers.ModelSerializer):
             'merged_at', 'sender_confirmed', 'receiver_confirmed',
             'can_recommit', 'counterparty_name', 'counterparty_phone',
             'counterparty_account', 'counterparty_bank',
-            'role', 'counterparty_role'  # NEW
+            'role', 'counterparty_role'
         ]
 
     def get_counterparty_name(self, obj):
         pair = obj.get_counterparty()
-        return pair.get_full_name() if pair else None
+        if pair:
+            return f"{pair.first_name} {pair.last_name}"
+        return None
 
     def get_counterparty_phone(self, obj):
         pair = obj.get_counterparty()
@@ -32,11 +34,11 @@ class BidSerializer(serializers.ModelSerializer):
 
     def get_counterparty_account(self, obj):
         pair = obj.get_counterparty()
-        return pair.account_number if pair else None
+        return pair.account_number if hasattr(pair, 'account_number') else None
 
     def get_counterparty_bank(self, obj):
         pair = obj.get_counterparty()
-        return pair.bank_name if pair else None
+        return pair.bank_name if hasattr(pair, 'bank_name') else None
 
     def get_role(self, obj):
         return 'seller' if obj.type == 'withdrawal' else 'buyer'
@@ -45,9 +47,9 @@ class BidSerializer(serializers.ModelSerializer):
         pair = obj.get_counterparty()
         if not pair:
             return None
-        bid = pair.bids.filter(merged_bid=obj).first() or pair.bids.filter(id=obj.merged_bid_id).first()
-        if bid:
-            return 'seller' if bid.type == 'withdrawal' else 'buyer'
+        pair_bid = pair.bids.filter(merged_bid=obj).first() or pair.bids.filter(id=obj.merged_bid_id).first()
+        if pair_bid:
+            return 'seller' if pair_bid.type == 'withdrawal' else 'buyer'
         return None
 
     def get_can_recommit(self, obj):
