@@ -121,7 +121,7 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 
 DATABASES = {
     'default': dj_database_url.config(
-        default='postgresql://postgres.qmgdfsvsbcfprolfahrs:m1Flhs3XRI8J5tU0@aws-0-eu-central-1.pooler.supabase.com:5432/postgres',
+        default=os.getenv('DATABASE_URL'),
         conn_max_age=600,
         engine='django.db.backends.postgresql'
     )

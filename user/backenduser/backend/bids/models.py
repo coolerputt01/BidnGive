@@ -1,4 +1,3 @@
-# bids/models.py
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
@@ -49,5 +48,11 @@ class Bid(models.Model):
     def __str__(self):
         return f"Bid #{self.id} by {self.user.username} - {self.amount} ({self.status})"
 
+    def get_counterparty_bid(self):
+        if self.merged_bid:
+            return self.merged_bid
+        return Bid.objects.filter(merged_bid=self).first()
+
     def get_counterparty(self):
-        return self.merged_bid.user if self.merged_bid else None
+        bid = self.get_counterparty_bid()
+        return bid.user if bid else None

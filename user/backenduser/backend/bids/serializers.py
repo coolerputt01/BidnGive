@@ -2,6 +2,10 @@ from rest_framework import serializers
 from .models import Bid
 from decimal import Decimal
 
+from rest_framework import serializers
+from .models import Bid
+from decimal import Decimal
+
 class BidSerializer(serializers.ModelSerializer):
     counterparty_name = serializers.SerializerMethodField()
     counterparty_phone = serializers.SerializerMethodField()
@@ -23,33 +27,28 @@ class BidSerializer(serializers.ModelSerializer):
         ]
 
     def get_counterparty_name(self, obj):
-        pair = obj.get_counterparty()
-        if pair:
-            return f"{pair.first_name} {pair.last_name}"
-        return None
+        counterparty = obj.get_counterparty()
+        return f"{counterparty.first_name} {counterparty.last_name}" if counterparty else None
 
     def get_counterparty_phone(self, obj):
-        pair = obj.get_counterparty()
-        return pair.phone_number if pair else None
+        counterparty = obj.get_counterparty()
+        return counterparty.phone_number if counterparty else None
 
     def get_counterparty_account(self, obj):
-        pair = obj.get_counterparty()
-        return pair.account_number if hasattr(pair, 'account_number') else None
+        counterparty = obj.get_counterparty()
+        return counterparty.account_number if hasattr(counterparty, 'account_number') else None
 
     def get_counterparty_bank(self, obj):
-        pair = obj.get_counterparty()
-        return pair.bank_name if hasattr(pair, 'bank_name') else None
+        counterparty = obj.get_counterparty()
+        return counterparty.bank_name if hasattr(counterparty, 'bank_name') else None
 
     def get_role(self, obj):
         return 'seller' if obj.type == 'withdrawal' else 'buyer'
 
     def get_counterparty_role(self, obj):
-        pair = obj.get_counterparty()
-        if not pair:
-            return None
-        pair_bid = pair.bids.filter(merged_bid=obj).first() or pair.bids.filter(id=obj.merged_bid_id).first()
-        if pair_bid:
-            return 'seller' if pair_bid.type == 'withdrawal' else 'buyer'
+        bid = obj.get_counterparty_bid()
+        if bid:
+            return 'seller' if bid.type == 'withdrawal' else 'buyer'
         return None
 
     def get_can_recommit(self, obj):
@@ -72,6 +71,7 @@ class BidSerializer(serializers.ModelSerializer):
             plan=plan,
             expected_return=expected_return
         )
+
 
 
 class PaymentProofSerializer(serializers.ModelSerializer):
