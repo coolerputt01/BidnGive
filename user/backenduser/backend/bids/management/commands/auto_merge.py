@@ -2,50 +2,75 @@ from django.core.management.base import BaseCommand
 from django.utils.timezone import now
 from bids.models import Bid
 from django.db import transaction
+from decimal import Decimal
 
 class Command(BaseCommand):
-    help = 'Automatically merge eligible pending bids into pairs (must be different users).'
+    help = 'Merge sellers (withdrawal) with buyers (investment) based on amount.'
 
     def handle(self, *args, **options):
-        pending_bids = list(Bid.objects.filter(status='pending').order_by('created_at'))
+        buyers = list(Bid.objects.filter(status='pending', type='investment').order_by('-amount'))  # big buyers first
+        sellers = list(Bid.objects.filter(status='pending', type='withdrawal').order_by('amount'))  # small sellers first
 
-        if len(pending_bids) < 2:
-            self.stdout.write("⚠️ Not enough bids to merge.")
-            return
-
-        used = set()
+        used_buyers = set()
+        used_sellers = set()
         merged_count = 0
 
-        for i in range(len(pending_bids)):
-            bid1 = pending_bids[i]
-            if bid1.id in used:
+        for seller in sellers:
+            if seller.id in used_sellers:
                 continue
 
-            for j in range(i + 1, len(pending_bids)):
-                bid2 = pending_bids[j]
-                if bid2.id in used or bid1.user == bid2.user:
+            # Try to find one buyer with equal amount
+            for buyer in buyers:
+                if buyer.id in used_buyers:
                     continue
+                if buyer.amount == seller.amount:
+                    self.merge_pair(buyer, seller)
+                    used_buyers.add(buyer.id)
+                    used_sellers.add(seller.id)
+                    merged_count += 2
+                    break
+            else:
+                # Try to combine multiple buyers to match seller amount
+                match_buyers = []
+                total = Decimal('0')
+                for buyer in buyers:
+                    if buyer.id in used_buyers:
+                        continue
+                    if total + buyer.amount <= seller.amount:
+                        match_buyers.append(buyer)
+                        total += buyer.amount
+                    if total == seller.amount:
+                        break
 
-                with transaction.atomic():
-                    # Merge logic
-                    bid1.status = bid2.status = 'merged'
-                    bid1.merged_at = bid2.merged_at = now()
-                    bid1.merged_with = bid2.user
-                    bid2.merged_with = bid1.user
+                if total == seller.amount and match_buyers:
+                    with transaction.atomic():
+                        for buyer in match_buyers:
+                            buyer.status = 'merged'
+                            buyer.merged_bid = seller
+                            buyer.merged_at = now()
+                            buyer.save()
+                            used_buyers.add(buyer.id)
 
-                    # Set receiver (bid1 is receiving, bid2 is sending)
-                    bid2.receiver_account = bid1.user.account_number
-                    # bid2.receiver_bank = bid1.user.bank_name  ← Removed this line
-                    bid2.receiver_phone = bid1.user.phone_number
-
-                    bid1.save()
-                    bid2.save()
-
-                used.update([bid1.id, bid2.id])
-                merged_count += 2
-                break  # Move to next available bid
+                        seller.status = 'merged'
+                        seller.merged_at = now()
+                        seller.merged_bid = match_buyers[0]  # optional: just assign one
+                        seller.save()
+                        used_sellers.add(seller.id)
+                        merged_count += len(match_buyers) + 1
 
         if merged_count:
             self.stdout.write(self.style.SUCCESS(f"✅ {merged_count} bids merged successfully."))
         else:
-            self.stdout.write("❌ No valid user pairs found to merge.")
+            self.stdout.write("❌ No matching buyer-seller pairs found.")
+
+    def merge_pair(self, buyer, seller):
+        with transaction.atomic():
+            buyer.status = 'merged'
+            buyer.merged_bid = seller
+            buyer.merged_at = now()
+            buyer.save()
+
+            seller.status = 'merged'
+            seller.merged_bid = buyer
+            seller.merged_at = now()
+            seller.save()

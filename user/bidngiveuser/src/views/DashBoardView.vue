@@ -13,16 +13,10 @@ const nextAuctionTime = ref('');
 const referralCode = ref('');
 const isAuctionRoom = ref(false);
 const joiningAuction = ref(false);
+const canJoinAuction = ref(true);
+const hasMergedBid = ref(false);
 
 const baseUrl = "https://bidngive.com/signup";
-
-function copyCode() {
-  const link = `${baseUrl}?ref=${referralCode.value}`;
-  navigator.clipboard.writeText(link).then(() => {
-    toast.success("Referral link copied!");
-  });
-}
-
 const router = useRouter();
 
 const walletUrl = "https://bidngive.onrender.com/api/wallet/balance";
@@ -32,15 +26,30 @@ const userUrl = "https://bidngive.onrender.com/api/accounts/me/";
 
 let intervalId = null;
 
+function copyCode() {
+  const link = `${baseUrl}?ref=${referralCode.value}`;
+  navigator.clipboard.writeText(link).then(() => {
+    toast.success("Referral link copied!");
+  });
+}
+
 function startCountdown(initialSeconds) {
   let remaining = initialSeconds;
   clearInterval(intervalId);
+  canJoinAuction.value = true;
+
   intervalId = setInterval(() => {
     if (remaining <= 0) {
       clearInterval(intervalId);
       fetchAuctionData();
       return;
     }
+
+    // Disable join after 60 seconds
+    if (marketStatus.value === 'open' && remaining < (initialSeconds - 60)) {
+      canJoinAuction.value = false;
+    }
+
     const hrs = Math.floor(remaining / 3600);
     const mins = Math.floor((remaining % 3600) / 60);
     const secs = remaining % 60;
@@ -62,31 +71,25 @@ async function fetchAuctionData() {
 }
 
 const tryClaimDailyBonus = async () => {
-  const token = localStorage.getItem('access_token')
-  const lastBonusDate = localStorage.getItem('last_bonus_date')
-  const today = new Date().toISOString().split('T')[0]
+  const token = localStorage.getItem('access_token');
+  const lastBonusDate = localStorage.getItem('last_bonus_date');
+  const today = new Date().toISOString().split('T')[0];
 
-  if (lastBonusDate === today) {
-    return  // Already claimed today
-  }
+  if (lastBonusDate === today) return;
 
   try {
     const res = await axios.post('https://bidngive.onrender.com/api/wallet/daily-bonus/', {}, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    })
+      headers: { Authorization: `Bearer ${token}` }
+    });
 
-    toast.success(res.data.message + ` 🎁 ₦100! New Balance: ₦${res.data.balance.toLocaleString()}`)
-    localStorage.setItem('last_bonus_date', today)
+    toast.success(res.data.message + ` 🎁 ₦100! New Balance: ₦${res.data.balance.toLocaleString()}`);
+    localStorage.setItem('last_bonus_date', today);
   } catch (err) {
-    // Already claimed or other error
     if (err.response?.data?.message === "Already claimed today") {
-      localStorage.setItem('last_bonus_date', today)  // Still mark to avoid duplicate call
+      localStorage.setItem('last_bonus_date', today);
     }
   }
-}
-
+};
 
 async function joinAuctionRoom() {
   const token = localStorage.getItem("access_token");
@@ -109,7 +112,6 @@ async function joinAuctionRoom() {
     joiningAuction.value = false;
   }
 }
-
 
 function viewBid() {
   router.push('/bid');
@@ -138,7 +140,17 @@ onMounted(async () => {
 
   try {
     const bidsResponse = await axios.get(bidsUrl, { headers });
-    bids.value = Array.isArray(bidsResponse.data) ? bidsResponse.data.length : 0;
+    const userBids = Array.isArray(bidsResponse.data) ? bidsResponse.data : [];
+    bids.value = userBids.length;
+
+    // Check for merged bid
+    hasMergedBid.value = userBids.some(bid => bid.status === 'merged');
+    if (hasMergedBid.value) {
+      toast.info("📦 You have a pending merged bid! Please check and upload payment proof.", {
+        position: "top-right",
+        autoClose: false,
+      });
+    }
   } catch (error) {
     console.error("Failed to fetch bids", error);
   }
@@ -154,7 +166,6 @@ onUnmounted(() => {
 <template>
   <main style="background-color: #ebebd3ff;padding-bottom: 5em;">
     <section style="margin-bottom: 12%;">
-      <!-- Header -->
       <div style="display: flex; justify-content: space-between; align-items: center; padding: 24px;">
         <div style="line-height: 8px;">
           <h2 style="font-size: 1.2em; font-weight: 600;">Hello, {{ username }}!</h2>
@@ -163,7 +174,6 @@ onUnmounted(() => {
         <img src="/icons/notification-on.svg" alt="Notifications Icon" style="width: 1.8em; height: 1.8em;">
       </div>
 
-      <!-- Countdown & Market Status -->
       <section style="display: flex; flex-direction: column; align-items: center;">
         <span style="color: #004f28; background-color: #e0ffe0; font-size: 0.9em; padding: 4px 8px; font-weight: 600; border-radius: 6px;">
           ⏰ Next auction starts in {{ countdown }}
@@ -172,7 +182,9 @@ onUnmounted(() => {
         <div style="margin-top: 4%; background-color: #95190C; padding: 12px; width: 80%; border-radius: 12px;">
           <div style="color: #fff; display: flex; justify-content: space-between; margin-bottom: 10px;">
             <p style="font-size: 1.3em;">Market Status</p>
-            <span style="background-color: #000; display: flex;justify-content: center;padding: 0;flex: 0 0 auto;height: 2vh;padding: 1%;align-items: center;color: #fff; font-weight: 500; border-radius: 50px; border: none; cursor: pointer;">Market {{ marketStatus }}</span>
+            <span style="background-color: #000; display: flex; justify-content: center; padding: 1%; align-items: center; color: #fff; font-weight: 500; border-radius: 50px;">
+              Market {{ marketStatus }}
+            </span>
           </div>
           <div style="color: #fff; display: flex; justify-content: space-between;">
             <p>🕐 Next Auction: {{ nextAuctionTime }}</p>
@@ -182,7 +194,7 @@ onUnmounted(() => {
           <div style="margin-top: 12px; text-align: center;">
             <button
               v-if="!isAuctionRoom && marketStatus === 'open'"
-              :disabled="joiningAuction"
+              :disabled="joiningAuction || !canJoinAuction"
               @click="joinAuctionRoom"
               style="width: 60vw; padding: 10px; background-color: #fff; font-weight: 600; border-radius: 50px; border: none; cursor: pointer;"
             >
@@ -203,7 +215,6 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <!-- Ongoing Bids Card -->
         <div style="margin-top: 4%; background-color: #191919; padding: 20px; width: 80%; border-radius: 12px;">
           <p style="color: #fff; font-size: 1.2em; font-weight: 600;">
             <img src="/icons/moneybag.svg" style="width: 1.3em; margin-right: 6px;" /> Ongoing Bids
@@ -216,7 +227,6 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <!-- Referral + Wallet Card -->
         <div style="margin-top: 4%; background-color: #e0ffe0; padding: 20px; width: 80%; border-radius: 12px;">
           <p style="font-size: 1.2em; color: #004f28; font-weight: 600;">🎁 Referral + Daily Bonus</p>
           <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
@@ -224,13 +234,12 @@ onUnmounted(() => {
               <p style="color: #004f28; font-size: 0.9em;">Bonus</p>
               <span style="font-size: 1.5em; font-weight: bold;">₦{{ wallet }}</span>
             </div>
-            <button @click="router.push('/bid')" style="background-color: #17a35e; color: #fff; font-weight: 600; border-radius: 50px; border: none; display: flex;justify-content: center;flex: 0 0 auto;height: 2vh;padding: 1.3%;align-items: center;">
+            <button @click="router.push('/bid')" style="background-color: #17a35e; color: #fff; font-weight: 600; border-radius: 50px; border: none; display: flex; justify-content: center; padding: 1.3%; align-items: center;">
               Withdraw
             </button>
           </div>
         </div>
 
-        <!-- Referral Code -->
         <div style="margin-top: 4%; background-color: #fff; padding: 20px; width: 80%; border-radius: 12px;">
           <p style="font-size: 1.2em; color: #17a35e; font-weight: 600;">📢 Invite & Earn</p>
           <p style="color: #444; font-size: 0.95em;">

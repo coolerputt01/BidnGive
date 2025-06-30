@@ -10,11 +10,11 @@
         <div class="details-grid">
           <div class="info-row">
             <span class="label">Amount to Pay</span>
-            <span class="value amount">₦{{ bid.amount.toLocaleString() }}</span>
+            <span class="value amount">₦{{ Number(bid.amount).toLocaleString() }}</span>
           </div>
           <div class="info-row">
             <span class="label">Expected Return</span>
-            <span class="value">₦{{ bid.expected_return.toLocaleString() }}</span>
+            <span class="value">₦{{ Number(bid.expected_return).toLocaleString() }}</span>
           </div>
           <div class="info-row">
             <span class="label">Status</span>
@@ -25,18 +25,17 @@
             <span class="value countdown">{{ countdowns[bid.id] || 'Loading...' }}</span>
           </div>
         </div>
-        <p class="warning" v-if="countdowns[bid.id]?.includes('Expired')">
-        ⚠️ Your account may be banned due to late payment.
-      </p>
 
+        <p class="warning" v-if="countdowns[bid.id]?.includes('Expired')">
+          ⚠️ Your account may be suspended for missing this deadline.
+        </p>
 
         <div class="receiver-box">
           <h4>Receiver Details</h4>
           <p>
             <strong>Phone:</strong>
-            <a :href="`https://wa.me/${bid.receiver_phone.startsWith('0') ? '234' + bid.receiver_phone.slice(1) : bid.receiver_phone}`"
- target="_blank" class="whatsapp-link">
-              {{ bid.receiver_phone }}
+            <a :href="whatsappLink(bid.counterparty_phone)" target="_blank" class="whatsapp-link">
+              {{ bid.counterparty_phone }}
               <img src="/icons/whatsapp.svg" alt="WhatsApp" class="wa-icon" />
             </a>
           </p>
@@ -75,9 +74,9 @@ import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { toast } from 'vue3-toastify'
 
+const token = localStorage.getItem('access_token')
 const bids = ref([])
 const countdowns = ref({})
-const token = localStorage.getItem('access_token')
 const fileMap = ref({})
 const uploadingMap = ref({})
 const confirmingMap = ref({})
@@ -87,12 +86,17 @@ const fetchBids = async () => {
     const res = await axios.get(`https://bidngive.onrender.com/api/bids/`, {
       headers: { Authorization: `Bearer ${token}` }
     })
-    const mergedBids = res.data.filter(b => b.status === 'merged' || b.status === 'paid')
-    bids.value = mergedBids
+    bids.value = res.data.filter(b => b.status === 'merged' || b.status === 'paid')
     startCountdowns()
   } catch {
     toast.error('Failed to load bids')
   }
+}
+
+const whatsappLink = (number) => {
+  if (!number) return '#'
+  const phone = number.startsWith('0') ? '234' + number.slice(1) : number
+  return `https://wa.me/${phone}`
 }
 
 const handleFileChange = (e, bidId) => {
@@ -103,8 +107,10 @@ const uploadProof = async (bidId) => {
   const file = fileMap.value[bidId]
   if (!file) return toast.error('Select a payment proof file')
   uploadingMap.value[bidId] = true
+
   const formData = new FormData()
   formData.append('payment_proof', file)
+
   try {
     await axios.put(`https://bidngive.onrender.com/api/bids/upload-proof/${bidId}/`, formData, {
       headers: {
@@ -112,7 +118,7 @@ const uploadProof = async (bidId) => {
         'Content-Type': 'multipart/form-data'
       }
     })
-    toast.success('Proof uploaded')
+    toast.success('Proof uploaded successfully')
     fetchBids()
   } catch {
     toast.error('Upload failed')
@@ -127,10 +133,10 @@ const confirmAsReceiver = async (bidId) => {
     const res = await axios.post(`https://bidngive.onrender.com/api/bids/confirm-receive/${bidId}/`, {}, {
       headers: { Authorization: `Bearer ${token}` }
     })
-    toast.success(res.data.message)
+    toast.success(res.data.message || 'Payment confirmed')
     fetchBids()
   } catch (err) {
-    toast.error(err.response?.data?.error || 'Failed to confirm')
+    toast.error(err.response?.data?.error || 'Failed to confirm payment')
   } finally {
     confirmingMap.value[bidId] = false
   }
@@ -140,10 +146,11 @@ const startCountdowns = () => {
   bids.value.forEach(bid => {
     if (!bid.merged_at) return
     const end = new Date(bid.merged_at).getTime() + 5 * 60 * 60 * 1000
+
     const updateTimer = () => {
-      const diff = end - new Date().getTime()
+      const diff = end - Date.now()
       if (diff <= 0) {
-        countdowns.value[bid.id] = "⛔ Time Expired"
+        countdowns.value[bid.id] = '⛔ Time Expired'
       } else {
         const h = Math.floor(diff / 3600000)
         const m = Math.floor((diff % 3600000) / 60000)
@@ -151,6 +158,7 @@ const startCountdowns = () => {
         countdowns.value[bid.id] = `${h}h ${m}m ${s}s`
       }
     }
+
     updateTimer()
     setInterval(updateTimer, 1000)
   })
@@ -162,9 +170,9 @@ onMounted(fetchBids)
 <style scoped>
 .merge-info-page {
   padding: 40px 20px;
-  font-family: 'Segoe UI', sans-serif;
   background: #f3f3f3;
   min-height: 100vh;
+  font-family: 'Segoe UI', sans-serif;
 }
 
 .header {
@@ -173,12 +181,11 @@ onMounted(fetchBids)
 }
 
 .header h2 {
-  font-size: 2.2em;
+  font-size: 2em;
   color: #191919;
 }
 
 .header p {
-  font-size: 1em;
   color: #555;
 }
 
@@ -207,7 +214,6 @@ onMounted(fetchBids)
 .info-row {
   display: flex;
   justify-content: space-between;
-  font-size: 0.95em;
 }
 
 .label {
@@ -221,16 +227,11 @@ onMounted(fetchBids)
 }
 
 .amount {
-  font-size: 1.1em;
   color: #0c69c8;
 }
 
 .status.paid {
   color: #1a8917;
-}
-
-.status.pending {
-  color: #d97706;
 }
 
 .status.merged {
@@ -250,23 +251,16 @@ onMounted(fetchBids)
   font-size: 0.95em;
 }
 
-.receiver-box h4 {
-  margin-bottom: 10px;
-  color: #111827;
-}
-
 .whatsapp-link {
   color: #10b981;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  text-decoration: none;
 }
 
 .wa-icon {
   width: 18px;
   height: 18px;
-  vertical-align: middle;
 }
 
 .upload-section,
@@ -280,7 +274,6 @@ input[type="file"] {
 }
 
 .btn {
-  display: inline-block;
   background-color: #04724D;
   color: white;
   padding: 10px 18px;
@@ -288,11 +281,10 @@ input[type="file"] {
   border-radius: 10px;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.3s ease;
 }
 
 .btn:hover {
-  background-color: rgb(3, 197, 133);
+  background-color: #03966e;
 }
 
 .confirm-btn {
@@ -307,13 +299,18 @@ input[type="file"] {
   margin-top: 20px;
   font-weight: bold;
   color: #16a34a;
-  font-size: 1em;
+}
+
+.warning {
+  margin-top: 10px;
+  color: #b91c1c;
+  font-weight: 500;
 }
 
 .loading {
   text-align: center;
   font-size: 1.1em;
-  color: #555;
+  color: #777;
   margin-top: 50px;
 }
 </style>

@@ -7,7 +7,9 @@ class BidSerializer(serializers.ModelSerializer):
     counterparty_phone = serializers.SerializerMethodField()
     counterparty_account = serializers.SerializerMethodField()
     counterparty_bank = serializers.SerializerMethodField()
+    counterparty_role = serializers.SerializerMethodField()  # NEW
     can_recommit = serializers.SerializerMethodField()
+    role = serializers.SerializerMethodField()
 
     class Meta:
         model = Bid
@@ -16,7 +18,8 @@ class BidSerializer(serializers.ModelSerializer):
             'user', 'status', 'expected_return', 'merged_bid',
             'merged_at', 'sender_confirmed', 'receiver_confirmed',
             'can_recommit', 'counterparty_name', 'counterparty_phone',
-            'counterparty_account', 'counterparty_bank'
+            'counterparty_account', 'counterparty_bank',
+            'role', 'counterparty_role'  # NEW
         ]
 
     def get_counterparty_name(self, obj):
@@ -34,6 +37,18 @@ class BidSerializer(serializers.ModelSerializer):
     def get_counterparty_bank(self, obj):
         pair = obj.get_counterparty()
         return pair.bank_name if pair else None
+
+    def get_role(self, obj):
+        return 'seller' if obj.type == 'withdrawal' else 'buyer'
+
+    def get_counterparty_role(self, obj):
+        pair = obj.get_counterparty()
+        if not pair:
+            return None
+        bid = pair.bids.filter(merged_bid=obj).first() or pair.bids.filter(id=obj.merged_bid_id).first()
+        if bid:
+            return 'seller' if bid.type == 'withdrawal' else 'buyer'
+        return None
 
     def get_can_recommit(self, obj):
         user = obj.user
