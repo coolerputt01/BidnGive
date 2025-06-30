@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser
 from django.core.management import call_command
+from referral.utils import award_referral_bonus  # <-- import here
 from decimal import Decimal
 
 from .models import Bid
@@ -57,6 +58,14 @@ class ConfirmReceiverView(APIView):
         serializer = ConfirmPaymentSerializer(instance=bid, data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        # After serializer.save()...
+
+        # If investment type, award referral bonus on first paid bid
+        if bid.type == 'investment':
+            bid.status = 'paid'
+            bid.save()
+            award_referral_bonus(bid)
+
 
         # Handle wallet logic for withdrawals
         if bid.type == 'withdrawal':

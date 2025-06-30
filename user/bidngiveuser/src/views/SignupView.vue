@@ -1,10 +1,11 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { toast } from 'vue3-toastify';
 import axios from 'axios';
 
 const router = useRouter();
+
 const apiUrl = "https://bidngive.onrender.com/api/accounts/register/";
 const eye = '/icons/eye-svgrepo-com.svg';
 const eyeClosed = '/icons/eye-slash-svgrepo-com.svg';
@@ -20,6 +21,24 @@ const confirmPassword = ref('');
 const referral_code = ref('');
 const loading = ref(false);
 
+onMounted(() => {
+  // Handle referral from hash URL (e.g. #/signup?ref=REFZEE)
+  const hash = window.location.hash;
+  const queryString = hash.includes('?') ? hash.split('?')[1] : '';
+  const params = new URLSearchParams(queryString);
+  const referralFromUrl = params.get('ref');
+
+  if (referralFromUrl) {
+    referral_code.value = referralFromUrl;
+    localStorage.setItem('referral', referralFromUrl);
+  } else {
+    const storedReferral = localStorage.getItem('referral');
+    if (storedReferral) {
+      referral_code.value = storedReferral;
+    }
+  }
+});
+
 const signUp = async () => {
   if (password.value !== confirmPassword.value) {
     toast.error("Passwords do not match!");
@@ -29,7 +48,7 @@ const signUp = async () => {
   loading.value = true;
 
   try {
-    const response = await axios.post(apiUrl, {
+    await axios.post(apiUrl, {
       username: username.value,
       email: email.value,
       phone_number: phone_number.value,
@@ -43,6 +62,8 @@ const signUp = async () => {
       username: username.value,
       email: email.value,
     }));
+
+    localStorage.removeItem('referral');
 
     setTimeout(() => {
       router.push('/otp');
@@ -74,23 +95,27 @@ const signUp = async () => {
         <div class="form-group"><input v-model="username" type="text" required placeholder=" " /><label>Username</label></div>
         <div class="form-group"><input v-model="email" type="email" required placeholder=" " /><label>Email</label></div>
         <div class="form-group"><input v-model="phone_number" type="text" required placeholder=" " maxlength="11" /><label>Phone Number</label></div>
+
         <div class="form-group password-field">
-          <input
-            :type="showPassword ? 'text' : 'password'"
-            v-model="password"
-            required
-            placeholder=" "
-            minlength="6"
-          />
+          <input :type="showPassword ? 'text' : 'password'" v-model="password" required placeholder=" " minlength="6" />
           <label>Password</label>
           <span class="toggle-icon" @click="showPassword = !showPassword">
             <img :src="showPassword ? eye : eyeClosed" alt="toggle password" />
           </span>
         </div>
-        <div class="form-group password-field"><input v-model="confirmPassword" :type="showConfirmPassword ? 'text' : 'password'" required placeholder=" " minlength="6" /><label>Confirm Password</label><span class="toggle-icon" @click="showConfirmPassword = !showConfirmPassword">
-            <img :src="showPassword ? eye : eyeClosed" alt="toggle password" />
-          </span></div>
-        <div class="form-group"><input v-model="referral_code" type="text" placeholder=" " /><label>Referral Code (optional)</label></div>
+
+        <div class="form-group password-field">
+          <input :type="showConfirmPassword ? 'text' : 'password'" v-model="confirmPassword" required placeholder=" " minlength="6" />
+          <label>Confirm Password</label>
+          <span class="toggle-icon" @click="showConfirmPassword = !showConfirmPassword">
+            <img :src="showConfirmPassword ? eye : eyeClosed" alt="toggle password" />
+          </span>
+        </div>
+
+        <div class="form-group">
+          <input v-model="referral_code" type="text" placeholder=" " />
+          <label>Referral Code (optional)</label>
+        </div>
 
         <div class="checkbox">
           <input type="checkbox" id="tos" required />
@@ -139,7 +164,6 @@ const signUp = async () => {
   cursor: pointer;
   color: #888;
 }
-
 
 .form-wrapper {
   width: 100%;

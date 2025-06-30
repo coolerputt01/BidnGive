@@ -14,6 +14,15 @@ const referralCode = ref('');
 const isAuctionRoom = ref(false);
 const joiningAuction = ref(false);
 
+const baseUrl = "https://bidngive.com/signup";
+
+function copyCode() {
+  const link = `${baseUrl}?ref=${referralCode.value}`;
+  navigator.clipboard.writeText(link).then(() => {
+    toast.success("Referral link copied!");
+  });
+}
+
 const router = useRouter();
 
 const walletUrl = "https://bidngive.onrender.com/api/wallet/balance";
@@ -101,11 +110,6 @@ async function joinAuctionRoom() {
   }
 }
 
-function copyCode() {
-  navigator.clipboard.writeText(referralCode.value).then(() => {
-    toast.success("Referral code copied!");
-  });
-}
 
 function viewBid() {
   router.push('/bid');
@@ -148,7 +152,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <main style="background-color: #ebebd3ff;margin-bottom: 5em;">
+  <main style="background-color: #ebebd3ff;padding-bottom: 5em;">
     <section style="margin-bottom: 12%;">
       <!-- Header -->
       <div style="display: flex; justify-content: space-between; align-items: center; padding: 24px;">
@@ -229,11 +233,13 @@ onUnmounted(() => {
         <!-- Referral Code -->
         <div style="margin-top: 4%; background-color: #fff; padding: 20px; width: 80%; border-radius: 12px;">
           <p style="font-size: 1.2em; color: #17a35e; font-weight: 600;">📢 Invite & Earn</p>
-          <p style="color: #444; font-size: 0.95em;">Share your referral code and earn ₦500 for every user that joins and makes a bid.</p>
+          <p style="color: #444; font-size: 0.95em;">
+            Share your referral link and earn ₦500 for every user that joins and makes a bid.
+          </p>
           <div style="display: flex; gap: 10px; margin-top: 10px;">
-            <input readonly :value="referralCode" style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 6px;" />
+            <input readonly :value="`${baseUrl}?ref=${referralCode}`" style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 6px;" />
             <button @click="copyCode" style="padding: 10px 16px; background-color: #17a35e; color: #fff; font-weight: 600; border-radius: 6px; cursor: pointer;">
-              Copy Code
+              Copy Link
             </button>
           </div>
         </div>
