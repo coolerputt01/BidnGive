@@ -87,6 +87,7 @@ const fetchBids = async () => {
       headers: { Authorization: `Bearer ${token}` }
     })
     bids.value = res.data.filter(b => b.status === 'merged' || b.status === 'paid')
+    console.log(bids.value)
     startCountdowns()
   } catch {
     toast.error('Failed to load bids')

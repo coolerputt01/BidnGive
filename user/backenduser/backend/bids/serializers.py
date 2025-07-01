@@ -26,6 +26,16 @@ class BidSerializer(serializers.ModelSerializer):
             'role', 'counterparty_role'
         ]
 
+    def get_counterparty(self):
+        bid = self.get_counterparty_bid()
+        return bid.user if bid else None
+
+    def get_counterparty_bid(self):
+        if self.merged_bid:
+            return self.merged_bid
+        return Bid.objects.filter(merged_bid=self).first()
+
+
     def get_counterparty_name(self, obj):
         counterparty = obj.get_counterparty()
         return f"{counterparty.first_name} {counterparty.last_name}" if counterparty else None
