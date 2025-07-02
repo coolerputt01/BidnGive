@@ -269,7 +269,7 @@ onUnmounted(() => {
           <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
             <div>
               <p style="color: #004f28; font-size: 0.9em;">Bonus</p>
-              <span style="font-size: 1.5em; font-weight: bold;">₦{{ wallet.toLocaleString() }}</span>
+              <span style="font-size: 1.5em; font-weight: bold;">₦{{ wallet ? wallet.toLocaleString() : '0.00' }}</span>
             </div>
             <button @click="withdrawReferral" style="background-color: #17a35e; color: #fff; font-weight: 600; border-radius: 50px; border: none; display: flex; justify-content: center; padding: 1.3%; align-items: center;">
               Withdraw
@@ -280,7 +280,7 @@ onUnmounted(() => {
         <div style="margin-top: 4%; background-color: #fff; padding: 20px; width: 80%; border-radius: 12px;">
           <p style="font-size: 1.2em; color: #17a35e; font-weight: 600;">📢 Invite & Earn</p>
           <p style="color: #444; font-size: 0.95em;">
-            Share your referral link and earn ₦500 for every user that joins and makes a bid.
+            Share your referral link and earn ₦100 and 5% referral bonus for every user that joins and makes a bid.
           </p>
           <div style="display: flex; gap: 10px; margin-top: 10px;">
             <input readonly :value="`${baseUrl}?ref=${referralCode}`" style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 6px;" />

@@ -37,7 +37,9 @@ const login = async () => {
     }
 
     toast.success("Login successful!");
-    router.push('/dashboard');
+    setTimeout(() => {
+      router.push('/dashboard')
+    }, 200)
   } catch (err) {
     toast.error("Invalid credentials or user does not exist");
     console.log("hi")
