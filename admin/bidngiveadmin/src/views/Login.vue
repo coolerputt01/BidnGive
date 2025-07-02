@@ -48,6 +48,7 @@ const loginAdmin = async () => {
     });
 
     if (!userInfo.data.is_staff) {
+        console.log(userInfo.data);
         toast.error("Access denied. Not an admin.");
         localStorage.removeItem("access_token");
         return;

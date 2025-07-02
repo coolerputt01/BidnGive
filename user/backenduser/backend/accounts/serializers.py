@@ -21,7 +21,8 @@ class UserSerializer(serializers.ModelSerializer):
             'account_name',
             'bank_name',
             'is_phone_verified',
-            'is_email_verified'
+            'is_email_verified',
+            'is_staff'
         ]
 
 
