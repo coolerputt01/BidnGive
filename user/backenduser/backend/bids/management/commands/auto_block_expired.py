@@ -17,7 +17,6 @@ class Command(BaseCommand):
             payment_proof__isnull=True
         )
 
-
         if not expired_bids.exists():
             logger.info("✅ No expired bids found.")
             return
@@ -26,15 +25,21 @@ class Command(BaseCommand):
 
         for bid in expired_bids:
             user = bid.user
-            if user and user.is_active:
-                # Send ban email and block
+
+            if not user:
+                logger.warning(f"⚠️ Bid #{bid.id} has no associated user.")
+                continue
+
+            if user.is_active:
+                # Send ban email and deactivate user
                 send_ban_notification(user.email)
                 user.is_active = False
                 user.save()
+                logger.info(f"⛔ User {user.username} blocked due to Bid #{bid.id}")
 
+            # Expire the bid
             bid.status = 'expired'
             bid.save()
             blocked_count += 1
-            logger.info(f"⛔ User {user.username} blocked for Bid #{bid.id}")
 
         logger.info(f"\n✅ Done. {blocked_count} user(s) blocked for bid expiry.")
