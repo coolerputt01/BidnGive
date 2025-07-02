@@ -23,7 +23,7 @@ class BidSerializer(serializers.ModelSerializer):
             'merged_at', 'sender_confirmed', 'receiver_confirmed',
             'can_recommit', 'counterparty_name', 'counterparty_phone',
             'counterparty_account', 'counterparty_bank',
-            'role', 'counterparty_role'
+            'role', 'counterparty_role','counterparty_account_name'
         ]
 
     def get_counterparty(self):
@@ -51,6 +51,10 @@ class BidSerializer(serializers.ModelSerializer):
     def get_counterparty_bank(self, obj):
         counterparty = obj.get_counterparty()
         return counterparty.bank_name if hasattr(counterparty, 'bank_name') else None
+   
+    def get_counterparty_account_name(self, obj):
+        counterparty = obj.get_counterparty()
+        return counterparty.account_name if hasattr(counterparty,'account_name') else None
 
     def get_role(self, obj):
         return 'seller' if obj.type == 'withdrawal' else 'buyer'

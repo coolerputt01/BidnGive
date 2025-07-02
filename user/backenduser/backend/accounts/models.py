@@ -17,6 +17,7 @@ class User(AbstractUser):
     email_otp = models.CharField(max_length=6, null=True, blank=True)
     in_auction_room = models.BooleanField(default=False)
     account_number = models.CharField(null=True, blank=True)
+    account_name = models.CharField(null=True, blank=True)
     bank_name = models.CharField(null=True, blank=True)   
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['phone_number']
