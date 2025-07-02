@@ -14,7 +14,7 @@ from bids.serializers import BidSerializer
 from referral.models import ReferralBonus, WithdrawalRequest
 from .models import MergeSettings
 from django.utils import timezone
-from .utils.merge import merge_new_investment
+from .merge import merge_new_investment
 
 class AuctionStatusView(APIView):
     def get(self, request):
