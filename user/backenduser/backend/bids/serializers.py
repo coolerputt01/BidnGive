@@ -10,6 +10,7 @@ class BidSerializer(serializers.ModelSerializer):
     counterparty_name = serializers.SerializerMethodField()
     counterparty_phone = serializers.SerializerMethodField()
     counterparty_account = serializers.SerializerMethodField()
+    counterparty_account_name = serializers.SerializerMethodField()
     counterparty_bank = serializers.SerializerMethodField()
     counterparty_role = serializers.SerializerMethodField()
     can_recommit = serializers.SerializerMethodField()
