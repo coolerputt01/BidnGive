@@ -12,7 +12,7 @@ const user = ref(null);
 const showVerifyModal = ref(false);
 const tokenIsValid = ref(false);
 
-const hiddenRoutes = ['signup', 'otp', 'login', 'tos', '404'];
+const hiddenRoutes = ['signup', 'otp', 'login', 'tos', '404','banned'];
 const showNav = computed(() => route.name && !hiddenRoutes.includes(route.name));
 
 const checkAuthAndPhone = async () => {

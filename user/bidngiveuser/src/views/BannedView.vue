@@ -1,76 +1,132 @@
 <template>
-  <main class="banned-page">
-    <section class="card">
-      <img src="/icons/blocked.svg" alt="Blocked" class="icon" />
-      <h2>You’ve Been Banned</h2>
-      <p>Your account has been temporarily suspended due to policy violations or unconfirmed payments.</p>
-      <p class="note">Please contact support if you believe this was a mistake.</p>
+  <main class="banned-hero">
+    <section class="banned-content">
+      <img src="/icons/blocked.svg" alt="Blocked Icon" class="blocked-icon" />
 
-      <a href="https://wa.me/2348000000000" class="btn">📞 Contact Support</a>
+      <h1 class="banned-title">Access Restricted</h1>
+      <p class="banned-text">
+        Your BID ‘N’ GIVE account has been <strong>suspended</strong> due to unresolved issues —
+        either unconfirmed payments or policy violations.
+      </p>
+
+      <p class="banned-subtext">
+        If this was a mistake, you can reach out immediately to resolve it.
+      </p>
+
+      <a href="https://wa.me/2348000000000" class="contact-btn pulse">
+        📞 Contact Support via WhatsApp
+      </a>
     </section>
+
+    <div class="banned-bg-layer"></div>
   </main>
 </template>
 
 <script setup>
-// No script needed unless you want to auto-logout or redirect later.
+import { onMounted } from 'vue';
+
+onMounted(() => {
+  console.log('🚫 User blocked page mounted');
+});
 </script>
 
 <style scoped>
-.banned-page {
+.banned-hero {
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #f7f9f9;
   height: 100vh;
+  background: linear-gradient(to bottom, #ffecec 0%, #fff 100%);
+  overflow: hidden;
+  position: relative;
   padding: 20px;
+  text-align: center;
   font-family: 'Segoe UI', sans-serif;
 }
 
-.card {
-  background: #fff;
-  padding: 40px;
-  border-radius: 16px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-  max-width: 500px;
-  text-align: center;
+.banned-bg-layer {
+  position: absolute;
+  background: url('/images/banned-bg.svg') no-repeat center;
+  background-size: cover;
+  opacity: 0.07;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  pointer-events: none;
 }
 
-.icon {
-  width: 80px;
-  margin-bottom: 20px;
+.banned-content {
+  z-index: 2;
+  max-width: 720px;
+  width: 100%;
+  color: #222;
 }
 
-h2 {
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: #dc3545;
-  margin-bottom: 10px;
+.blocked-icon {
+  width: 100px;
+  margin-bottom: 1rem;
+  animation: float 3s ease-in-out infinite;
 }
 
-p {
+.banned-title {
+  font-size: 2.4rem;
+  font-weight: 800;
+  color: #b00020;
+  margin-bottom: 1rem;
+}
+
+.banned-text {
+  font-size: 1.05rem;
+  line-height: 1.6;
+  margin-bottom: 0.8rem;
   color: #444;
+}
+
+.banned-subtext {
   font-size: 0.95rem;
-  margin-bottom: 10px;
-}
-
-.note {
-  font-size: 0.85rem;
   color: #666;
+  margin-bottom: 2rem;
 }
 
-.btn {
-  margin-top: 20px;
-  display: inline-block;
+.contact-btn {
   background-color: #17a35e;
   color: #fff;
-  padding: 12px 24px;
-  border-radius: 30px;
-  text-decoration: none;
+  padding: 14px 28px;
+  font-size: 1rem;
   font-weight: 600;
-  transition: background-color 0.3s;
+  border-radius: 50px;
+  text-decoration: none;
+  display: inline-block;
+  transition: background-color 0.3s ease;
 }
 
-.btn:hover {
+.contact-btn:hover {
   background-color: #128f4a;
+}
+
+/* Pulse animation */
+.pulse {
+  animation: pulseAnim 2s infinite;
+}
+
+@keyframes pulseAnim {
+  0% {
+    box-shadow: 0 0 0 0 rgba(23, 163, 94, 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(23, 163, 94, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(23, 163, 94, 0);
+  }
+}
+
+/* Icon float */
+@keyframes float {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+  100% { transform: translateY(0); }
 }
 </style>
