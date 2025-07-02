@@ -21,7 +21,8 @@ const createInvestment = async () => {
   try {
     const res = await axios.post(
       'https://bidngive.onrender.com/api/admin/create-investment/',
-      { email: email.value, amount: amount.value, plan: '50_24' },
+      { email: email.value, amount: amount.value, plan: '50_24' ,expected_return: amount.value + (amount.value/2)
+      },
       { headers }
     );
     toast.success(res.data.message);

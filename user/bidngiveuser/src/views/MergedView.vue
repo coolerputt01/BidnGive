@@ -7,6 +7,7 @@
 
     <div v-if="bids.length" class="bids-container">
       <div v-for="bid in bids" :key="bid.id" class="bid-card">
+        <!-- BID DETAILS -->
         <div class="details-grid">
           <div class="info-row">
             <span class="label">Amount</span>
@@ -30,18 +31,28 @@
           ⚠️ Your account may be suspended for missing this deadline.
         </p>
 
-        <div class="receiver-box">
-          <h4>{{ bid.role === 'buyer' ? 'Pay To' : 'From' }} Details</h4>
-          <p>
-            <strong>Phone:</strong>
-            <a :href="whatsappLink(bid.counterparty_phone)" target="_blank" class="whatsapp-link">
-              {{ bid.counterparty_phone }}
-              <img src="/icons/whatsapp.svg" alt="WhatsApp" class="wa-icon" />
-            </a>
-          </p>
-        </div>
+        <!-- RECEIVER INFO -->
+<div class="receiver-box">
+  <h4>{{ bid.role === 'buyer' ? 'Pay To' : 'From' }} Details</h4>
 
-        <!-- BUYER UI -->
+  <p>
+    <strong>Phone:</strong>
+    <a :href="whatsappLink(bid.counterparty_phone)" target="_blank" class="whatsapp-link">
+      {{ bid.counterparty_phone }}
+      <img src="/icons/whatsapp.svg" alt="WhatsApp" class="wa-icon" />
+    </a>
+  </p>
+
+  <p v-if="bid.counterparty_account">
+    <strong>Bank:</strong> {{ bid.counterparty_bank }}
+  </p>
+  <p v-if="bid.counterparty_account">
+    <strong>Account No:</strong> {{ bid.counterparty_account }}
+  </p>
+</div>
+
+
+        <!-- BUYER: Upload Payment -->
         <div v-if="bid.role === 'buyer' && bid.status === 'merged'" class="upload-section">
           <label>Upload Payment Proof:</label>
           <input type="file" @change="e => handleFileChange(e, bid.id)" accept="image/*" />
@@ -53,7 +64,7 @@
           </button>
         </div>
 
-        <!-- SELLER UI -->
+        <!-- SELLER: Confirm Payment -->
         <div v-if="bid.role === 'seller'" class="confirm-section">
           <p class="info-text">
             <strong>Payment Status:</strong>
@@ -63,16 +74,25 @@
           </p>
 
           <div v-if="bid.payment_proof && !bid.receiver_confirmed">
-            <img :src="bid.payment_proof" class="preview" />
+            <div v-if="fileMap[bid.id]">
+              <img :src="filePreview(bid.id)" class="preview" />
+            </div>
+
             <button class="btn confirm-btn" @click="() => confirmAsReceiver(bid.id)" :disabled="confirmingMap[bid.id]">
               {{ confirmingMap[bid.id] ? 'Confirming...' : 'Confirm Payment Received' }}
             </button>
           </div>
         </div>
 
-        <!-- Success Msg for Buyer -->
+        <!-- BUYER SUCCESS MSG -->
         <div v-if="bid.role === 'buyer' && bid.status === 'paid' && bid.receiver_confirmed" class="success-msg">
           ✅ Payment has been confirmed by the receiver.
+        </div>
+
+        <!-- RECOMMIT & WITHDRAW -->
+        <div v-if="bid.status === 'paid' && bid.receiver_confirmed" class="actions-buttons">
+          <button class="btn recommit-btn" @click="recommit(bid)">🔁 Recommit</button>
+          <button class="btn withdraw-btn" @click="withdraw(bid)">💸 Withdraw</button>
         </div>
       </div>
     </div>
@@ -105,15 +125,15 @@ const fetchBids = async () => {
   }
 }
 
-const whatsappLink = (number) => {
-  if (!number) return '#'
-  const phone = number.startsWith('0') ? '234' + number.slice(1) : number
-  return `https://wa.me/${phone}`
-}
-
 const handleFileChange = (e, bidId) => {
   fileMap.value[bidId] = e.target.files[0]
 }
+
+const filePreview = (bidId) => {
+  const file = fileMap.value[bidId]
+  return file ? URL.createObjectURL(file) : ''
+}
+
 
 const uploadProof = async (bidId) => {
   const file = fileMap.value[bidId]
@@ -142,21 +162,58 @@ const uploadProof = async (bidId) => {
 const confirmAsReceiver = async (bidId) => {
   confirmingMap.value[bidId] = true
   try {
-    const res = await axios.post(`https://bidngive.onrender.com/api/bids/confirm-receive/${bidId}/`, {}, {
+    await axios.post(`https://bidngive.onrender.com/api/bids/confirm-receive/${bidId}/`, {}, {
       headers: { Authorization: `Bearer ${token}` }
     })
-    toast.success(res.data.message || 'Payment confirmed')
+    toast.success('Payment confirmed')
     fetchBids()
   } catch (err) {
-    toast.error(err.response?.data?.error || 'Failed to confirm payment')
+    toast.error(err.response?.data?.error || 'Failed to confirm')
   } finally {
     confirmingMap.value[bidId] = false
   }
 }
 
+const recommit = async (bid) => {
+  try {
+    await axios.post(`https://bidngive.onrender.com/api/bids/`, {
+      amount: bid.amount,
+      plan: bid.plan,
+      type: 'investment'
+    }, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    toast.success('Recommit successful')
+    fetchBids()
+  } catch {
+    toast.error('Recommit failed')
+  }
+}
+
+const withdraw = async (bid) => {
+  try {
+    await axios.post(`https://bidngive.onrender.com/api/bids/withdraw/`, {
+      amount: bid.amount
+    }, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    toast.success('Withdrawal successful')
+    fetchBids()
+  } catch {
+    toast.error('Withdrawal failed')
+  }
+}
+
+const whatsappLink = (number) => {
+  if (!number) return '#'
+  const phone = number.startsWith('0') ? '234' + number.slice(1) : number
+  return `https://wa.me/${phone}`
+}
+
 const startCountdowns = () => {
   bids.value.forEach(bid => {
-    if (!bid.merged_at) return
+    if (!bid.merged_at || bid.status !== 'merged') return
+
     const end = new Date(bid.merged_at).getTime() + 5 * 60 * 60 * 1000
 
     const updateTimer = () => {
@@ -176,107 +233,155 @@ const startCountdowns = () => {
   })
 }
 
+
 onMounted(fetchBids)
 </script>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600&display=swap');
+
 .merge-info-page {
   padding: 40px 20px;
-  background: #f3f3f3;
+  background: #f3f4f6;
   min-height: 100vh;
   font-family: 'Segoe UI', sans-serif;
 }
+
 .header {
   text-align: center;
   margin-bottom: 30px;
 }
 .header h2 {
-  font-size: 2em;
-  color: #191919;
+  font-size: 2rem;
+  font-weight: 600;
+  color: #111827;
 }
 .header p {
-  color: #555;
+  color: #6b7280;
+  margin-top: 6px;
+  font-size: 0.95rem;
 }
+
 .bids-container {
   display: flex;
   flex-direction: column;
   gap: 25px;
 }
+
 .bid-card {
-  background: #fff;
-  padding: 25px;
+  background: #ffffff;
+  padding: 24px;
   border-radius: 16px;
-  max-width: 720px;
+  max-width: 740px;
   margin: auto;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.04);
+  transition: transform 0.2s ease;
 }
+.bid-card:hover {
+  transform: translateY(-2px);
+}
+
 .details-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 15px;
-  margin-bottom: 20px;
+  gap: 16px;
+  margin-bottom: 18px;
 }
 .info-row {
   display: flex;
   justify-content: space-between;
 }
 .label {
-  color: #555;
+  color: #6b7280;
   font-weight: 500;
 }
 .value {
   font-weight: bold;
-  color: #222;
+  color: #111827;
 }
 .amount {
   color: #0c69c8;
 }
-.status.paid {
-  color: #1a8917;
-}
 .status.merged {
   color: #0c69c8;
 }
-.countdown {
-  color: #c2410c;
-  font-weight: bold;
+.status.paid {
+  color: #16a34a;
 }
+.countdown {
+  color: #b45309;
+  font-weight: 600;
+}
+
+.warning {
+  margin-top: 6px;
+  font-size: 0.9rem;
+  color: #b91c1c;
+  font-weight: 500;
+}
+
 .receiver-box {
-  background-color: #f8fafc;
-  padding: 16px;
-  border-radius: 10px;
+  background-color: #f9fafb;
+  padding: 14px 18px;
+  border-radius: 12px;
   margin-bottom: 20px;
-  font-size: 0.95em;
+  font-size: 0.95rem;
+  border: 1px solid #e5e7eb;
+}
+.receiver-box h4 {
+  margin-bottom: 8px;
+  color: #111827;
+  font-size: 1rem;
+  font-weight: 600;
 }
 .whatsapp-link {
   color: #10b981;
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  font-weight: 500;
 }
 .wa-icon {
   width: 18px;
   height: 18px;
+  opacity: 0.8;
 }
+
 .upload-section,
 .confirm-section {
   margin-top: 20px;
 }
+
 input[type="file"] {
   margin-top: 8px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 8px 12px;
+  width: 100%;
+  font-size: 0.95rem;
 }
+
+.preview {
+  max-width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  margin-top: 12px;
+}
+
 .btn {
-  background-color: #04724D;
+  background-color: #047857;
   color: white;
   padding: 10px 18px;
   border: none;
   border-radius: 10px;
   font-weight: 600;
   cursor: pointer;
+  margin-top: 10px;
+  transition: background-color 0.3s ease;
 }
 .btn:hover {
-  background-color: #03966e;
+  background-color: #065f46;
 }
 .confirm-btn {
   background-color: #10b981;
@@ -284,26 +389,34 @@ input[type="file"] {
 .confirm-btn:hover {
   background-color: #059669;
 }
+.actions-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 24px;
+}
+.recommit-btn {
+  background-color: #2563eb;
+}
+.recommit-btn:hover {
+  background-color: #1d4ed8;
+}
+.withdraw-btn {
+  background-color: #dc2626;
+}
+.withdraw-btn:hover {
+  background-color: #b91c1c;
+}
 .success-msg {
   margin-top: 20px;
   font-weight: bold;
   color: #16a34a;
-}
-.warning {
-  margin-top: 10px;
-  color: #b91c1c;
-  font-weight: 500;
-}
-.preview {
-  max-width: 100%;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  margin-top: 10px;
+  text-align: center;
 }
 .loading {
   text-align: center;
-  font-size: 1.1em;
-  color: #777;
-  margin-top: 50px;
+  font-size: 1rem;
+  color: #6b7280;
+  margin-top: 60px;
 }
 </style>

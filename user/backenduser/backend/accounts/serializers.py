@@ -11,7 +11,19 @@ def generate_otp():
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        exclude = ['password']
+        fields = [
+            'id',
+            'username',
+            'full_name',
+            'email',
+            'phone_number',
+            'referral_code',
+            'account_number',
+            'bank_name',
+            'is_phone_verified',
+            'is_email_verified'
+        ]
+
 
 class RegisterSerializer(serializers.ModelSerializer):
     referral_code = serializers.CharField(required=False, allow_blank=True)

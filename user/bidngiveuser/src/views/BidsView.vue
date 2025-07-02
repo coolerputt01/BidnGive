@@ -1,7 +1,7 @@
 <template>
-  <section class="create-bid-page" style="margin-bottom: 5em;">
+  <section class="bids-page" style="margin-bottom: 5em;">
     <!-- Header -->
-    <h2 class="page-title">Investment Bid</h2>
+    <h2 class="page-title">Your Bids</h2>
 
     <!-- Auction Countdown -->
     <div class="auction-info">
@@ -16,14 +16,13 @@
       </span>
     </div>
 
-    <!-- Bid Cards -->
+    <!-- Bids Display -->
     <div v-if="bids.length > 0">
-      <BidCard
-        v-for="bid in bids"
-        :key="bid.id"
-        :bid="bid"
-        @action="fetchBids"
-      />
+      <div v-for="bid in bids" :key="bid.id">
+        <BidCard v-if="bid.type === 'investment'" :bid="bid" @action="fetchBids" />
+        <SellerBidCard v-else :bid="bid" @action="fetchBids" />
+      </div>
+
     </div>
 
     <!-- No Bids Message -->
@@ -31,7 +30,7 @@
       <p>No bids available. Create one below.</p>
     </div>
 
-    <!-- Create Bid Form -->
+    <!-- Create Investment Bid Form -->
     <form class="create-form" @submit.prevent="submitBid">
       <label for="amount">Amount (₦):</label>
       <input type="number" id="amount" v-model="form.amount" required />
@@ -45,72 +44,79 @@
         <p><strong>🔁 Recommitment:</strong> 100% mandatory</p>
       </div>
 
-      <button
-        type="submit"
-        :disabled="bids.length > 0 && bids[0].status !== 'paid'"
-      >
-        {{
-          bids.length > 0 && bids[0].status !== 'paid'
-            ? 'Pending Bid Exists'
-            : 'Create Bid'
-        }}
+      <button type="submit" :disabled="userHasPendingBid">
+        {{ userHasPendingBid ? 'Pending Bid Exists' : 'Create Investment Bid' }}
       </button>
     </form>
   </section>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { toast } from 'vue3-toastify'
-import axios from 'axios'
-import BidCard from '@/components/BidCard.vue'
+import { ref, onMounted, computed } from 'vue';
+import { toast } from 'vue3-toastify';
+import axios from 'axios';
+import BidCard from '@/components/BidCard.vue';
+import SellerBidCard from '@/components/SellerBidCard.vue';
 
-const form = ref({ amount: '' })
-const bids = ref([])
-const auctionInfo = ref({ remaining_seconds: 0, market_status: '' })
-const loadingSubmit = ref(false)
+const form = ref({ amount: '' });
+const bids = ref([]);
+const auctionInfo = ref({ remaining_seconds: 0, market_status: '' });
+const loadingSubmit = ref(false);
+const currentUserId = ref(null);
+const token = localStorage.getItem('access_token');
+
+const fetchProfile = async () => {
+  try {
+    const res = await axios.get('https://bidngive.onrender.com/api/accounts/me/', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    currentUserId.value = res.data.id;
+    console.log(currentUserId)
+  } catch (err) {
+    console.error('Failed to fetch profile', err);
+  }
+};
 
 const fetchBids = async () => {
-  const token = localStorage.getItem('access_token')
   try {
     const res = await axios.get('https://bidngive.onrender.com/api/bids/', {
       headers: { Authorization: `Bearer ${token}` }
-    })
-    bids.value = res.data
+    });
+    bids.value = res.data;
+    console.log(bids.value)
   } catch (err) {
-    console.error('Failed to fetch bids:', err)
+    console.error('Failed to fetch bids:', err);
   }
-}
+};
 
 const fetchAuctionStatus = async () => {
   try {
-    const res = await axios.get('https://bidngive.onrender.com/api/admin/auction/status/')
-    auctionInfo.value = res.data
+    const res = await axios.get('https://bidngive.onrender.com/api/admin/auction/status/');
+    auctionInfo.value = res.data;
   } catch (err) {
-    console.error('Failed to fetch auction status:', err)
+    console.error('Failed to fetch auction status:', err);
   }
-}
+};
 
 const submitBid = async () => {
-  if (loadingSubmit.value) return
-  loadingSubmit.value = true
+  if (loadingSubmit.value) return;
+  loadingSubmit.value = true;
 
-  const amount = parseFloat(form.value.amount)
+  const amount = parseFloat(form.value.amount);
   if (isNaN(amount) || amount < 10000) {
-    toast.error('Amount must be at least ₦10,000')
-    loadingSubmit.value = false
-    return
-  }else if(amount > 500000){
-    toast.error('Amount must be at most ₦500,000')
-    loadingSubmit.value = false
-    return 
+    toast.error('Amount must be at least ₦10,000');
+    loadingSubmit.value = false;
+    return;
+  } else if (amount > 500000) {
+    toast.error('Amount must be at most ₦500,000');
+    loadingSubmit.value = false;
+    return;
   }
 
-  const token = localStorage.getItem('access_token')
   const payload = {
     amount,
     plan: '50_24'
-  }
+  };
 
   try {
     await axios.post('https://bidngive.onrender.com/api/bids/', payload, {
@@ -118,51 +124,61 @@ const submitBid = async () => {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json'
       }
-    })
-    toast.success('Bid successfully created!')
-    form.value.amount = ''
-    fetchBids()
+    });
+    toast.success('Bid successfully created!');
+    form.value.amount = '';
+    fetchBids();
   } catch (err) {
-    toast.error('Failed to create bid.')
+    toast.error('Failed to create bid.');
   } finally {
-    loadingSubmit.value = false
+    loadingSubmit.value = false;
   }
-}
+};
 
+const userHasPendingBid = computed(() => {
+  return bids.value.some(
+    bid =>
+      bid.user === currentUserId.value &&
+      bid.status !== 'paid' &&
+      bid.status !== 'cancelled' &&
+      bid.status !== 'confirmed'
+  );
+});
 
 const formatTime = (seconds) => {
-  const h = Math.floor(seconds / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  const s = seconds % 60
-  return `${h}h : ${m}m : ${s}s`
-}
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  return `${h}h : ${m}m : ${s}s`;
+};
 
 onMounted(() => {
-  fetchBids()
-  fetchAuctionStatus()
-})
+  fetchProfile();
+  fetchBids();
+  fetchAuctionStatus();
+});
 
 setInterval(() => {
   if (auctionInfo.value.remaining_seconds > 0) {
-    auctionInfo.value.remaining_seconds--
+    auctionInfo.value.remaining_seconds--;
   }
-}, 1000)
+}, 1000);
 
-setInterval(fetchAuctionStatus, 60000)
+setInterval(fetchAuctionStatus, 60000);
 
 const expectedReturn = computed(() => {
-  const amt = parseFloat(form.value.amount || 0)
-  return amt > 0 ? Math.round(amt * 1.5).toLocaleString() : '0'
-})
+  const amt = parseFloat(form.value.amount || 0);
+  return amt > 0 ? Math.round(amt * 1.5).toLocaleString() : '0';
+});
 
 const profitAmount = computed(() => {
-  const amt = parseFloat(form.value.amount || 0)
-  return amt > 0 ? Math.round(amt * 0.5).toLocaleString() : '0'
-})
+  const amt = parseFloat(form.value.amount || 0);
+  return amt > 0 ? Math.round(amt * 0.5).toLocaleString() : '0';
+});
 </script>
 
 <style scoped>
-.create-bid-page {
+.bids-page {
   background-color: #f4f4f4;
   padding: 20px;
   font-family: Arial, sans-serif;
@@ -199,7 +215,6 @@ const profitAmount = computed(() => {
   color: #fff;
   display: inline-block;
 }
-
 .status.open {
   background-color: #17a35e;
 }

@@ -1,111 +1,71 @@
 <template>
-  <div class="merged-bid-card">
-    <div class="header">
-      <h3>💼 Bid — ₦{{ bid.amount.toLocaleString() }}</h3>
+  <div class="bid-card">
+    <div class="bid-header">
+      <div>
+        <h3 class="amount">₦{{ bid.amount.toLocaleString() }}</h3>
+        <p class="plan">{{ bid.plan.replace('_', '% in ') }} hrs</p>
+      </div>
       <span class="status" :class="bid.status">{{ formatStatus(bid.status) }}</span>
     </div>
 
-    <div class="details">
-      <div class="info"><strong>📆 Created:</strong> {{ formatDate(bid.created_at) }}</div>
-      <div class="info"><strong>📊 Plan:</strong> {{ bid.plan.replace('_', '% in ') + ' hrs' }}</div>
-      <div class="info"><strong>💰 Expected Return:</strong> ₦{{ bid.expected_return.toLocaleString() }}</div>
-      <div class="info"><strong>📈 Profit:</strong> ₦{{ profitAmount(bid.amount, bid.expected_return) }}</div>
-      <div class="info"><strong>📦 Type:</strong> {{ bid.type === 'investment' ? 'Investment' : 'Withdrawal' }}</div>
-      <div class="info" v-if="bid.status === 'merged'"><strong>⏳ Time Left:</strong> {{ timeLeft(bid.merged_at) }}</div>
+    <div class="bid-body">
+      <div class="info">
+        <strong>Expected Return:</strong>
+        <span>₦{{ bid.expected_return.toLocaleString() }}</span>
+      </div>
+      <div class="info">
+        <strong>Type:</strong>
+        <span class="capitalize">{{ bid.type }}</span>
+      </div>
+      <div class="info">
+        <strong>Status:</strong>
+        <span class="capitalize">{{ bid.status }}</span>
+      </div>
     </div>
 
-    <div v-if="bid.status === 'merged'" class="participants">
-      <h4>📨 Merged With:</h4>
-      <ul>
-        <li v-for="merge in bid.merges" :key="merge.id">
-          <span>{{ merge.user_name }} —
-            <a :href="`https://wa.me/${merge.phone}`" target="_blank">WhatsApp</a>
-          </span>
-        </li>
-      </ul>
-    </div>
-
-    <div v-if="bid.status === 'merged'" class="actions">
-      <input type="file" @change="handleProof" />
-      <button @click="submitProof">📤 Submit Payment Proof</button>
-    </div>
-
-    <div v-if="bid.status === 'completed' && bid.type !== 'withdrawal'" class="actions">
-      <button class="withdraw-btn" @click="withdraw">💸 Withdraw Returns</button>
-    </div>
-    <!-- Cancel Button -->
-    <div v-if="bid.status === 'pending'" class="actions">
-      <button class="cancel-btn" @click="cancelBid">❌ Cancel Bid</button>
+    <div
+      class="bid-actions"
+      v-if="bid.status === 'paid' && bid.receiver_confirmed"
+    >
+      <button class="btn recommit-btn" @click="recommit">🔁 Recommit</button>
+      <button class="btn withdraw-btn" @click="withdraw">💸 Withdraw</button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
 import axios from 'axios'
 import { toast } from 'vue3-toastify'
 
 const props = defineProps({ bid: Object })
 const emit = defineEmits(['action'])
-
 const token = localStorage.getItem('access_token')
-const selectedProof = ref(null)
-
-const formatDate = (iso) => {
-  const date = new Date(iso)
-  return date.toLocaleDateString('en-GB', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric'
-  })
-}
-
-const profitAmount = (amount, expected) => {
-  return (expected - amount).toLocaleString()
-}
 
 const formatStatus = (status) => ({
-  pending: '🕒 Awaiting Merge',
-  merged: '🔗 Merged, Pay Now',
-  paid: '💳 Paid, Awaiting Confirmation',
+  pending: '🕒 Pending',
+  merged: '🔗 Merged',
+  paid: '💳 Paid',
   completed: '✅ Completed',
   expired: '⌛ Expired'
 })[status] || status
 
-const timeLeft = (mergedAt) => {
-  const merged = new Date(mergedAt)
-  const now = new Date()
-  const diff = 5 * 60 * 60 * 1000 - (now - merged)
-  if (diff <= 0) return 'Expired'
-  const hrs = Math.floor(diff / (1000 * 60 * 60))
-  const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-  return `${hrs}h ${mins}m remaining`
-}
-
-const handleProof = (e) => {
-  selectedProof.value = e.target.files[0]
-}
-
-const submitProof = async () => {
-  if (!selectedProof.value) return toast.error('Select a file.')
-  const formData = new FormData()
-  formData.append('proof', selectedProof.value)
-
+const recommit = async () => {
   try {
     await axios.post(
-      `https://bidngive.onrender.com/api/bids/${props.bid.id}/upload-proof/`,
-      formData,
+      `https://bidngive.onrender.com/api/bids/`,
       {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data'
-        }
+        amount: props.bid.amount,
+        plan: props.bid.plan,
+        type: 'investment'
+      },
+      {
+        headers: { Authorization: `Bearer ${token}` }
       }
     )
-    toast.success('Proof uploaded.')
+    toast.success('Recommit successful')
     emit('action')
   } catch {
-    toast.error('Upload failed.')
+    toast.error('Recommit failed')
   }
 }
 
@@ -113,118 +73,113 @@ const withdraw = async () => {
   try {
     await axios.post(
       `https://bidngive.onrender.com/api/bids/withdraw/`,
-      { amount: props.bid.amount },
-      { headers: { Authorization: `Bearer ${token}` } }
+      {
+        amount: props.bid.amount
+      },
+      {
+        headers: { Authorization: `Bearer ${token}` }
+      }
     )
-    toast.success('Withdrawal created.')
+    toast.success('Withdrawal successful')
     emit('action')
-  } catch (err) {
-    toast.error('Withdrawal failed.')
-  }
-}
-const cancelBid = async () => {
-  try {
-    await axios.delete(`https://bidngive.onrender.com/api/bids/${props.bid.id}/`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    toast.success('Bid cancelled successfully.')
-    emit('action')
-  } catch (err) {
-    toast.error('Failed to cancel bid.')
+  } catch {
+    toast.error('Withdrawal failed')
   }
 }
 </script>
 
 <style scoped>
-.cancel-btn {
-  background-color: #f44336;
-}
-.cancel-btn:hover {
-  background-color: #d32f2f;
-}
-
-.merged-bid-card {
-  background: #fff;
-  padding: 22px;
-  border-radius: 14px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+.bid-card {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 24px;
   max-width: 620px;
-  margin: 24px auto;
+  margin: 20px auto;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
   font-family: 'Segoe UI', sans-serif;
+  transition: transform 0.2s ease;
 }
-
-.header {
+.bid-card:hover {
+  transform: translateY(-2px);
+}
+.bid-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+}
+.amount {
+  font-size: 1.5rem;
+  color: #0c69c8;
+  margin: 0;
+}
+.plan {
+  color: #888;
+  font-size: 0.9rem;
+  margin-top: 4px;
 }
 .status {
   padding: 6px 14px;
-  border-radius: 18px;
-  font-size: 0.85em;
+  border-radius: 20px;
   font-weight: bold;
-  color: #fff;
+  font-size: 0.85rem;
+  color: white;
+  text-transform: uppercase;
 }
 .status.pending {
   background-color: #ffc107;
   color: #000;
 }
 .status.merged {
-  background-color: #17a35e;
+  background-color: #2196f3;
+}
+.status.paid {
+  background-color: #4caf50;
 }
 .status.completed {
-  background-color: #4caf50;
+  background-color: #2e7d32;
 }
 .status.expired {
   background-color: #9e9e9e;
 }
-
-.details .info {
-  margin: 6px 0;
-  font-size: 0.95em;
-}
-
-.participants ul {
-  list-style: none;
-  padding: 0;
-  margin: 10px 0;
-}
-.participants li {
-  margin: 6px 0;
-}
-
-.actions {
+.bid-body {
   margin-top: 20px;
+}
+.info {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  justify-content: space-between;
+  padding: 8px 0;
+  font-size: 0.95rem;
 }
-
-input[type="file"] {
-  border: 1px solid #ccc;
-  padding: 10px;
-  border-radius: 8px;
-  font-size: 0.95em;
+.capitalize {
+  text-transform: capitalize;
 }
-
-button {
-  background-color: #17a35e;
-  color: white;
-  padding: 12px 16px;
-  border: none;
-  border-radius: 8px;
+.bid-actions {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 24px;
+}
+.btn {
+  padding: 12px 20px;
   font-weight: 600;
+  border: none;
+  border-radius: 12px;
   cursor: pointer;
   transition: background-color 0.3s ease;
+  font-size: 0.95rem;
 }
-button:hover {
-  background-color: #128f4a;
+.recommit-btn {
+  background-color: #0c69c8;
+  color: white;
+}
+.recommit-btn:hover {
+  background-color: #0758a0;
 }
 .withdraw-btn {
-  background-color: #dc3545;
+  background-color: #dc2626;
+  color: white;
 }
 .withdraw-btn:hover {
-  background-color: #c82333;
+  background-color: #b91c1c;
 }
 </style>

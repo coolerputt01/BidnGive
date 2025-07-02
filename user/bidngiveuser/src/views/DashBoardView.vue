@@ -13,8 +13,8 @@ const nextAuctionTime = ref('');
 const referralCode = ref('');
 const isAuctionRoom = ref(false);
 const joiningAuction = ref(false);
-const canJoinAuction = ref(true);
 const hasMergedBid = ref(false);
+const withdrawingReferral = ref(false);
 
 const baseUrl = "https://bidngive.com/signup";
 const router = useRouter();
@@ -36,18 +36,12 @@ function copyCode() {
 function startCountdown(initialSeconds) {
   let remaining = initialSeconds;
   clearInterval(intervalId);
-  canJoinAuction.value = true;
 
   intervalId = setInterval(() => {
     if (remaining <= 0) {
       clearInterval(intervalId);
       fetchAuctionData();
       return;
-    }
-
-    // Disable join after 60 seconds
-    if (marketStatus.value === 'open' && remaining < (initialSeconds - 60)) {
-      canJoinAuction.value = false;
     }
 
     const hrs = Math.floor(remaining / 3600);
@@ -113,6 +107,45 @@ async function joinAuctionRoom() {
   }
 }
 
+async function withdrawReferral() {
+  if (withdrawingReferral.value) return;
+
+  if (wallet.value < 10000) {
+    toast.warning("🚫 You need at least ₦10,000 referral bonus to withdraw.");
+    return;
+  }
+
+  if (wallet.value > 500000) {
+    toast.warning("🚫 Maximum withdrawal is ₦500,000 at a time.");
+    return;
+  }
+
+  const token = localStorage.getItem("access_token");
+  const headers = { Authorization: `Bearer ${token}` };
+
+  withdrawingReferral.value = true;
+
+  try {
+    await axios.post(
+      "https://bidngive.onrender.com/api/bids/",
+      {
+        amount: wallet.value,
+        type: "referral_withdraw",
+        plan: "referral_mode"
+      },
+      { headers }
+    );
+
+    toast.success("🎉 Referral withdrawal bid created!");
+    router.push("/bid");
+  } catch (error) {
+    console.error("Referral withdrawal failed:", error);
+    toast.error("Failed to create referral withdrawal bid.");
+  } finally {
+    withdrawingReferral.value = false;
+  }
+}
+
 function viewBid() {
   router.push('/bid');
 }
@@ -143,7 +176,6 @@ onMounted(async () => {
     const userBids = Array.isArray(bidsResponse.data) ? bidsResponse.data : [];
     bids.value = userBids.length;
 
-    // Check for merged bid
     hasMergedBid.value = userBids.some(bid => bid.status === 'merged');
     if (hasMergedBid.value) {
       toast.info("📦 You have a pending merged bid! Please check and upload payment proof.", {
@@ -194,7 +226,7 @@ onUnmounted(() => {
           <div style="margin-top: 12px; text-align: center;">
             <button
               v-if="!isAuctionRoom && marketStatus === 'open'"
-              :disabled="joiningAuction || !canJoinAuction"
+              :disabled="joiningAuction"
               @click="joinAuctionRoom"
               style="width: 60vw; padding: 10px; background-color: #fff; font-weight: 600; border-radius: 50px; border: none; cursor: pointer;"
             >
@@ -232,9 +264,9 @@ onUnmounted(() => {
           <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
             <div>
               <p style="color: #004f28; font-size: 0.9em;">Bonus</p>
-              <span style="font-size: 1.5em; font-weight: bold;">₦{{ wallet }}</span>
+              <span style="font-size: 1.5em; font-weight: bold;">₦{{ wallet.toLocaleString() }}</span>
             </div>
-            <button @click="router.push('/bid')" style="background-color: #17a35e; color: #fff; font-weight: 600; border-radius: 50px; border: none; display: flex; justify-content: center; padding: 1.3%; align-items: center;">
+            <button @click="withdrawReferral" style="background-color: #17a35e; color: #fff; font-weight: 600; border-radius: 50px; border: none; display: flex; justify-content: center; padding: 1.3%; align-items: center;">
               Withdraw
             </button>
           </div>

@@ -42,6 +42,7 @@ const fetchPendingBids = async () => {
       headers: { Authorization: `Bearer ${token}` }
     });
     bids.value = res.data;
+    console.log(bids.value)
   } catch (err) {
     console.error('Failed to fetch pending bids', err);
     toast.error('Could not load pending bids');

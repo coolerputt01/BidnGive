@@ -1,24 +1,32 @@
-from bids.models import Bid
-from datetime import datetime
+from django.db import transaction
 from django.utils.timezone import now
+from bids.models import Bid
+from decimal import Decimal
+from utils.merge import merge_new_investment
 
-def auto_merge():
-    pending_bids = Bid.objects.filter(status='pending').order_by('created_at')
-    if pending_bids.count() < 2:
-        return "Not enough bids to merge."
 
-    merged_count = 0
-    while pending_bids.count() >= 2:
-        bid1 = pending_bids[0]
-        bid2 = pending_bids[1]
+def merge_new_investment(investment_bid):
+    """
+    Try to merge a newly created investment bid with any matching withdrawal bid(s).
+    Returns True if merge was successful.
+    """
+    if investment_bid.status != 'pending' or investment_bid.type != 'investment':
+        return False
 
-        bid1.status = 'merged'
-        bid2.status = 'merged'
-        bid1.merged_at = now()
-        bid2.merged_at = now()
-        bid1.save()
-        bid2.save()
-        pending_bids = pending_bids[2:]
-        merged_count += 2
+    sellers = list(Bid.objects.filter(status='pending', type='withdrawal').order_by('amount'))
 
-    return f"{merged_count} bids merged."
+    for seller in sellers:
+        if investment_bid.amount == seller.amount:
+            with transaction.atomic():
+                investment_bid.status = 'merged'
+                investment_bid.merged_bid = seller
+                investment_bid.merged_at = now()
+                investment_bid.save()
+
+                seller.status = 'merged'
+                seller.merged_bid = investment_bid
+                seller.merged_at = now()
+                seller.save()
+                return True
+
+    return False  # no match found

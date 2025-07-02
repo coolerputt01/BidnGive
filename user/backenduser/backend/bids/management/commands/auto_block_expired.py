@@ -2,20 +2,24 @@ from django.core.management.base import BaseCommand
 from django.utils.timezone import now, timedelta
 from bids.models import Bid
 from accounts.utils.send_email import send_ban_notification
+import logging
+
+logger = logging.getLogger(__name__)
 
 class Command(BaseCommand):
     help = 'Block users with expired merged bids (no proof within 5 hours).'
 
     def handle(self, *args, **options):
         expiration_cutoff = now() - timedelta(hours=5)
-        expired_bids = Bid.objects.filter(
+        expired_bids = Bid.objects.select_related('user').filter(
             status='merged',
             merged_at__lt=expiration_cutoff,
             payment_proof__isnull=True
         )
 
+
         if not expired_bids.exists():
-            self.stdout.write("✅ No expired bids found.")
+            logger.info("✅ No expired bids found.")
             return
 
         blocked_count = 0
@@ -31,6 +35,6 @@ class Command(BaseCommand):
             bid.status = 'expired'
             bid.save()
             blocked_count += 1
-            self.stdout.write(f"⛔ User {user.username} blocked for Bid #{bid.id}")
+            logger.info(f"⛔ User {user.username} blocked for Bid #{bid.id}")
 
-        self.stdout.write(f"\n✅ Done. {blocked_count} user(s) blocked for bid expiry.")
+        logger.info(f"\n✅ Done. {blocked_count} user(s) blocked for bid expiry.")

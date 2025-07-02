@@ -14,9 +14,7 @@ from bids.serializers import BidSerializer
 from referral.models import ReferralBonus, WithdrawalRequest
 from .models import MergeSettings
 from django.utils import timezone
-
-
-
+from utils.merge import merge_new_investment
 
 class AuctionStatusView(APIView):
     def get(self, request):
@@ -66,7 +64,7 @@ class PendingBidsView(APIView):
     permission_classes = [IsAdminUser]
 
     def get(self, request):
-        bids = Bid.objects.filter(status='pending', user__in_auction_room=True).select_related('user')
+        bids = Bid.objects.filter(status='pending').select_related('user')
         return Response([
             {
                 "id": b.id,
@@ -155,17 +153,30 @@ class CreateInvestmentView(APIView):
         except User.DoesNotExist:
             return Response({"error": "User not found."}, status=404)
 
+        try:
+            percent = int(plan.split("_")[0])
+        except (ValueError, IndexError):
+            return Response({"error": "Invalid plan format."}, status=400)
+
+        expected_return = amount + (amount * percent / 100)
+
+        # Create investment bid as pending
         bid = Bid.objects.create(
             user=user,
             amount=amount,
             plan=plan,
-            status="merged",
-            merged_at=timezone.now()
+            expected_return=expected_return,
+            type="investment",
+            status="pending"
         )
+
+        # Try to merge it immediately
+        merged = merge_new_investment(bid)
 
         return Response({
             "message": f"Investment of ₦{amount} created for {user.username}.",
-            "bid_id": bid.id
+            "bid_id": bid.id,
+            "merged": merged
         })
 
 
