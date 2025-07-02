@@ -2,7 +2,7 @@ from django.db import transaction
 from django.utils.timezone import now
 from bids.models import Bid
 from decimal import Decimal
-from utils.merge import merge_new_investment
+
 
 
 def merge_new_investment(investment_bid):
