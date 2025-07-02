@@ -283,7 +283,10 @@ onUnmounted(() => {
         <div style="margin-top: 4%; background-color: #fff; padding: 20px; width: 80%; border-radius: 12px;">
           <p style="font-size: 1.2em; color: #17a35e; font-weight: 600;">📢 Invite & Earn</p>
           <p style="color: #444; font-size: 0.95em;">
-            Share your referral link and earn ₦100 and 5% referral bonus for every user that joins and makes a bid.
+            <pre>
+              ₦100 Daily Bonus
+              5% referral bonus
+            </pre>
           </p>
           <div style="display: flex; gap: 10px; margin-top: 10px;">
             <input readonly :value="`${baseUrl}?ref=${referralCode}`" style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 6px;" />
