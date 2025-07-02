@@ -23,7 +23,7 @@ class AuctionStatusView(APIView):
         now_time = now.time()
 
         morning = settings.morning_time if settings else time(8, 0)
-        evening = settings.evening_time if settings else time(18, 30)
+        evening = settings.evening_time if settings else time(20, 00)
 
         def get_next_auction():
             today = now.date()
