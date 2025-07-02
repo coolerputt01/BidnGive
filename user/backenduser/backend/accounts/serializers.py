@@ -18,6 +18,7 @@ class UserSerializer(serializers.ModelSerializer):
             'phone_number',
             'referral_code',
             'account_number',
+            'account_name',
             'bank_name',
             'is_phone_verified',
             'is_email_verified'

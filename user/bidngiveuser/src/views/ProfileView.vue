@@ -36,6 +36,7 @@
     <!-- Bank Account Info Card -->
     <section class="bank-details-card" v-if="!loading">
       <h3 style="margin-bottom: 20px;">🏦 Bank Account Details</h3>
+
       <div class="detail-item">
         <label>Account Number</label>
         <input type="text" v-model="account.account_number" placeholder="Enter your account number" />
@@ -44,6 +45,11 @@
       <div class="detail-item">
         <label>Bank Name</label>
         <input type="text" v-model="account.bank_name" placeholder="Enter your bank name" />
+      </div>
+
+      <div class="detail-item">
+        <label>Account Name</label>
+        <input type="text" v-model="account.account_name" placeholder="Enter your account name" />
       </div>
 
       <button class="save-btn" @click="saveBankDetails">💾 Save Changes</button>
@@ -60,7 +66,11 @@ import { toast } from 'vue3-toastify'
 
 const token = localStorage.getItem('access_token')
 const user = ref({})
-const account = ref({ account_number: '', bank_name: '' })
+const account = ref({
+  account_number: '',
+  bank_name: '',
+  account_name: ''
+})
 const loading = ref(true)
 const copied = ref(false)
 
@@ -72,6 +82,7 @@ const fetchProfile = async () => {
     user.value = res.data
     account.value.account_number = res.data.account_number || ''
     account.value.bank_name = res.data.bank_name || ''
+    account.value.account_name = res.data.account_name || ''
   } catch (err) {
     toast.error('Failed to load profile')
   } finally {
