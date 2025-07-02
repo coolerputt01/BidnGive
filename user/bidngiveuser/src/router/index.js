@@ -80,7 +80,7 @@ router.beforeEach(async (to, from, next) => {
     })
 
     const user = userRes.data
-    if (user.is_disabled) {
+    if (user.is_active) {
       return next({ name: 'banned' })
     }
 
