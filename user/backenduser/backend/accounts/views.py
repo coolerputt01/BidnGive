@@ -72,6 +72,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         data['is_staff'] = user.is_staff
         data['is_phone_verified'] = user.is_phone_verified
         data['is_email_verified'] = user.is_email_verified
+        data['is_active'] = user.is_active
         return data
 
 class CustomTokenObtainPairView(TokenObtainPairView):

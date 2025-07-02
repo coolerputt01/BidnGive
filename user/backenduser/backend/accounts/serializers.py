@@ -23,7 +23,8 @@ class UserSerializer(serializers.ModelSerializer):
             'is_phone_verified',
             'is_email_verified',
             'is_staff',
-            'is_disabled'
+            'is_disabled',
+            'is_active'
         ]
 
 
