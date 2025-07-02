@@ -1,5 +1,6 @@
 <template>
-  <section class="bids-page" style="margin-bottom: 5em;">
+  <LoadingScreen v-if="loading" />
+  <section v-else class="bids-page" style="margin-bottom: 5em;">
     <!-- Header -->
     <h2 class="page-title">Your Bids</h2>
 
@@ -57,6 +58,10 @@ import { toast } from 'vue3-toastify';
 import axios from 'axios';
 import BidCard from '@/components/BidCard.vue';
 import SellerBidCard from '@/components/SellerBidCard.vue';
+import LoadingScreen from '@/components/LoadingScreen.vue';
+
+const loading = ref(true); // added loading flag
+
 
 const form = ref({ amount: '' });
 const bids = ref([]);
@@ -152,11 +157,19 @@ const formatTime = (seconds) => {
   return `${h}h : ${m}m : ${s}s`;
 };
 
-onMounted(() => {
-  fetchProfile();
-  fetchBids();
-  fetchAuctionStatus();
+onMounted(async () => {
+  try {
+    loading.value = true;
+    await fetchProfile();
+    await fetchBids();
+    await fetchAuctionStatus();
+  } catch (err) {
+    console.error('Error during mounted lifecycle:', err);
+  } finally {
+    loading.value = false;
+  }
 });
+
 
 setInterval(() => {
   if (auctionInfo.value.remaining_seconds > 0) {

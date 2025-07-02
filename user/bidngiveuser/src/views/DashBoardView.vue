@@ -3,8 +3,7 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { toast } from 'vue3-toastify';
 import axios from 'axios';
-import LoadingScreen from '@/components/LoadingScreen.vue'
-
+import LoadingScreen from '@/components/LoadingScreen.vue';
 
 const username = ref('');
 const wallet = ref(0);
@@ -18,7 +17,6 @@ const joiningAuction = ref(false);
 const hasMergedBid = ref(false);
 const withdrawingReferral = ref(false);
 const loading = ref(true);
-
 
 const baseUrl = "https://bidngive.com/signup";
 const router = useRouter();
@@ -155,44 +153,49 @@ function viewBid() {
 }
 
 onMounted(async () => {
-  tryClaimDailyBonus();
+  loading.value = true;
   const token = localStorage.getItem("access_token");
   const headers = { Authorization: `Bearer ${token}` };
 
   try {
-    const userRes = await axios.get(userUrl, { headers });
-    username.value = userRes.data.username || '';
-    referralCode.value = userRes.data.referral_code || '';
-    isAuctionRoom.value = userRes.data.is_auction_room;
-  } catch (err) {
-    console.error("User fetch failed", err);
-  }
+    tryClaimDailyBonus();
 
-  try {
-    const walletResponse = await axios.get(walletUrl, { headers });
-    wallet.value = walletResponse.data.balance;
-  } catch (error) {
-    console.error("Failed to fetch wallet balance", error);
-  }
-
-  try {
-    const bidsResponse = await axios.get(bidsUrl, { headers });
-    const userBids = Array.isArray(bidsResponse.data) ? bidsResponse.data : [];
-    bids.value = userBids.length;
-
-    hasMergedBid.value = userBids.some(bid => bid.status === 'merged');
-    if (hasMergedBid.value) {
-      toast.info("📦 You have a pending merged bid! Please check and upload payment proof.", {
-        position: "top-right",
-        autoClose: false,
-      });
+    try {
+      const userRes = await axios.get(userUrl, { headers });
+      username.value = userRes.data.username || '';
+      referralCode.value = userRes.data.referral_code || '';
+      isAuctionRoom.value = userRes.data.is_auction_room;
+    } catch (err) {
+      console.error("User fetch failed", err);
     }
-  } catch (error) {
-    console.error("Failed to fetch bids", error);
-  }
 
-  await fetchAuctionData();
-  loading.value = false;
+    try {
+      const walletResponse = await axios.get(walletUrl, { headers });
+      wallet.value = walletResponse.data.balance;
+    } catch (error) {
+      console.error("Failed to fetch wallet balance", error);
+    }
+
+    try {
+      const bidsResponse = await axios.get(bidsUrl, { headers });
+      const userBids = Array.isArray(bidsResponse.data) ? bidsResponse.data : [];
+      bids.value = userBids.length;
+
+      hasMergedBid.value = userBids.some(bid => bid.status === 'merged');
+      if (hasMergedBid.value) {
+        toast.info("📦 You have a pending merged bid! Please check and upload payment proof.", {
+          position: "top-right",
+          autoClose: false,
+        });
+      }
+    } catch (error) {
+      console.error("Failed to fetch bids", error);
+    }
+
+    await fetchAuctionData();
+  } finally {
+    loading.value = false;
+  }
 });
 
 onUnmounted(() => {
@@ -292,7 +295,10 @@ onUnmounted(() => {
       </section>
     </section>
   </main>
-  <main>
-      <LoadingScreen v-else" message="Fetching your dashboard..." />
+
+  <!-- Loading Screen -->
+  <main v-else>
+    <LoadingScreen message="Fetching your dashboard..." />
   </main>
 </template>
+

@@ -44,7 +44,7 @@
 
       <div class="detail-item">
         <label>Bank Name</label>
-        <input type="text" v-model="account.account_name" placeholder="Enter your bank name" />
+        <input type="text" v-model="account.bank_name" placeholder="Enter your bank name" />
       </div>
 
       <div class="detail-item">
