@@ -3,6 +3,8 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { toast } from 'vue3-toastify';
 import axios from 'axios';
+import LoadingScreen from '@/components/LoadingScreen.vue'
+
 
 const username = ref('');
 const wallet = ref(0);
@@ -15,6 +17,8 @@ const isAuctionRoom = ref(false);
 const joiningAuction = ref(false);
 const hasMergedBid = ref(false);
 const withdrawingReferral = ref(false);
+const loading = ref(true);
+
 
 const baseUrl = "https://bidngive.com/signup";
 const router = useRouter();
@@ -188,6 +192,7 @@ onMounted(async () => {
   }
 
   await fetchAuctionData();
+  loading.value = false;
 });
 
 onUnmounted(() => {
@@ -196,7 +201,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <main style="background-color: #ebebd3ff;padding-bottom: 5em;">
+  <main v-if="!loading" style="background-color: #ebebd3ff;padding-bottom: 5em;">
     <section style="margin-bottom: 12%;">
       <div style="display: flex; justify-content: space-between; align-items: center; padding: 24px;">
         <div style="line-height: 8px;">
@@ -286,5 +291,8 @@ onUnmounted(() => {
         </div>
       </section>
     </section>
+  </main>
+  <main>
+      <LoadingScreen v-else" message="Fetching your dashboard..." />
   </main>
 </template>
