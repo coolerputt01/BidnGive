@@ -49,8 +49,8 @@
   <p v-if="bid.counterparty_account">
     <strong>Account No:</strong> {{ bid.counterparty_account }}
   </p>
-  <p v-if="bid.counterparty_account_name">
-    <strong>Account No:</strong> {{ bid.counterparty_account_name }}
+  <p v-if="bid.counterparty_name">
+    <strong>Account No:</strong> {{ bid.counterparty_name }}
   </p>
 </div>
 
