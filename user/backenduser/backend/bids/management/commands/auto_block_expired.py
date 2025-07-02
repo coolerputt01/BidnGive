@@ -33,7 +33,7 @@ class Command(BaseCommand):
             if user.is_active:
                 # Send ban email and deactivate user
                 send_ban_notification(user.email)
-                user.is_active = False
+                user.is_disabled = False
                 user.save()
                 logger.info(f"⛔ User {user.username} blocked due to Bid #{bid.id}")
 
