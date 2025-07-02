@@ -38,7 +38,7 @@ const baseUrl = 'https://bidngive.onrender.com';
 const fetchPendingBids = async () => {
   try {
     const token = localStorage.getItem('access_token');
-    const res = await axios.get(`${baseUrl}/api/admin/pending-bids/`, {
+    const res = await axios.get(`${baseUrl}/api/bids/pending-bids/`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     bids.value = res.data;

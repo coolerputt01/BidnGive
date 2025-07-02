@@ -1,103 +1,117 @@
 <template>
-  <main class="dashboard">
+  <main class="admin-dashboard">
+    <!-- Header -->
     <header class="dashboard-header">
-      <h2>Admin Dashboard</h2>
+      <div class="title-block">
+        <h1>📋 Admin Control Panel</h1>
+        <p>Quick actions to manage users, investments, and settings.</p>
+      </div>
     </header>
 
-    <section class="button-panel">
-      <button class="admin-btn" @click="goTo('/admin/pending-bids')">
-        🕒 Pending Bids
-      </button>
-      <button class="admin-btn" @click="goTo('/admin/manual-merge')">
-        🔀 Manual Merge
-      </button>
-      <button class="admin-btn" @click="goTo('/admin/withdrawals')">
-        💸 Withdrawals
-      </button>
-      <button class="admin-btn" @click="goTo('/admin/merge-settings')">
-        ⏰ Merge Time Settings
-      </button>
-      <button class="admin-btn" @click="goTo('/admin/manage-investments')">
-        📈 Manage Investments
-      </button>
-      <button class="admin-btn" @click="goTo('/admin/user-management')">
-        👥 Manage Users
-      </button>
+    <!-- Admin Action Grid -->
+    <section class="dashboard-grid">
+      <div class="dashboard-card" @click="goTo('/admin/cancel-recommitment')">
+        <div class="icon">🚫</div>
+        <h3>Cancel Recommitment</h3>
+        <p>Manually cancel recommitments for stuck bids.</p>
+      </div>
+
+      <div class="dashboard-card" @click="goTo('/admin/create-investment')">
+        <div class="icon">➕</div>
+        <h3>Create Investment</h3>
+        <p>Create a new investment on behalf of any user.</p>
+      </div>
+
+      <div class="dashboard-card" @click="goTo('/admin/user-management')">
+        <div class="icon">👥</div>
+        <h3>Users & List</h3>
+        <p>View users, suspend accounts, or inspect referrals.</p>
+      </div>
+
+      <div class="dashboard-card" @click="goTo('/admin/withdrawals')">
+        <div class="icon">💸</div>
+        <h3>Withdrawals</h3>
+        <p>Manage referral bonus withdrawal requests.</p>
+      </div>
+
+      <div class="dashboard-card" @click="goTo('/admin/pending-bids')">
+        <div class="icon">🕒</div>
+        <h3>Pending Bids</h3>
+        <p>Review bids awaiting merge or action.</p>
+      </div>
     </section>
   </main>
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router'
+import { useRouter } from 'vue-router';
 
-const router = useRouter()
-
-const logout = () => {
-  localStorage.clear()
-  router.push('/admin-login')
-}
+const router = useRouter();
 
 const goTo = (path) => {
-  router.push(path)
-}
+  router.push(path);
+};
 </script>
 
 <style scoped>
-.dashboard {
+.admin-dashboard {
   padding: 2rem;
-  background-color: #fff;
+  background: #f5f7fa;
   min-height: 100vh;
   font-family: 'Segoe UI', sans-serif;
 }
 
 .dashboard-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2.5rem;
+  margin-bottom: 2rem;
+  text-align: center;
 }
 
-.dashboard-header h2 {
-  font-size: 1.8rem;
-  color: #191919;
+.title-block h1 {
+  font-size: 2rem;
+  color: #004f28;
+  margin-bottom: 0.3rem;
 }
 
-.logout-btn {
-  background-color: #95190C;
-  color: #fff;
-  padding: 0.6rem 1.4rem;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: background-color 0.3s ease;
-}
-.logout-btn:hover {
-  background-color: #b92c1f;
-}
-
-.button-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  max-width: 400px;
-  margin: auto;
-}
-
-.admin-btn {
-  padding: 1rem 1.5rem;
+.title-block p {
   font-size: 1rem;
-  font-weight: 600;
-  border: none;
-  border-radius: 10px;
-  background-color: #004f28;
-  color: white;
-  text-align: left;
-  transition: background-color 0.25s ease;
-  cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  color: #555;
 }
-.admin-btn:hover {
-  background-color: #007a44;
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.dashboard-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+}
+
+.icon {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: #17a35e;
+}
+
+.dashboard-card h3 {
+  font-size: 1.2rem;
+  color: #191919;
+  margin-bottom: 0.5rem;
+}
+
+.dashboard-card p {
+  color: #666;
+  font-size: 0.95rem;
 }
 </style>

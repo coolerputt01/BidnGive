@@ -39,7 +39,7 @@ class BidSerializer(serializers.ModelSerializer):
 
     def get_counterparty_name(self, obj):
         counterparty = obj.get_counterparty()
-        return f"{counterparty.first_name} {counterparty.last_name}" if counterparty else None
+        return f"{counterparty.username}" if counterparty else None
 
     def get_counterparty_phone(self, obj):
         counterparty = obj.get_counterparty()
