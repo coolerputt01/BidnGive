@@ -1,5 +1,5 @@
 <template>
-  <section  class="bids-page" style="padding-bottom: 7em;">
+  <section class="bids-page" style="padding-bottom: 7em;">
     <!-- Header -->
     <div class="page-header">
       <h1>Your Investment Bids</h1>
@@ -31,6 +31,7 @@
     <!-- Bid List -->
     <div class="bid-list" v-if="filteredBids.length">
       <div class="bid-card" v-for="bid in filteredBids" :key="bid.id">
+        <SellerBidCard :bid="bid" @action="fetchBids" />
         <BidCard v-if="bid.type === 'investment'" :bid="bid" @action="fetchBids" />
         <SellerBidCard v-else :bid="bid" @action="fetchBids" />
       </div>
@@ -45,13 +46,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, onBeforeUnmount, computed } from 'vue';
 import axios from 'axios';
 import BidCard from '@/components/BidCard.vue';
 import SellerBidCard from '@/components/SellerBidCard.vue';
 
 const bids = ref([]);
 const auctionInfo = ref({ remaining_seconds: 0, market_status: '' });
+const interval = ref(null); // ✅ Fix: Declare interval
 const token = localStorage.getItem('access_token');
 
 const filter = ref('All');
@@ -92,11 +94,16 @@ const formatTime = (seconds) => {
 onMounted(() => {
   fetchBids();
   fetchAuctionStatus();
+  interval.value = setInterval(() => {
+    if (auctionInfo.value.remaining_seconds > 0) {
+      auctionInfo.value.remaining_seconds--;
+    }
+  }, 1000);
 });
 
-setInterval(() => {
-  if (auctionInfo.value.remaining_seconds > 0) auctionInfo.value.remaining_seconds--;
-}, 1000);
+onBeforeUnmount(() => {
+  if (interval.value) clearInterval(interval.value);
+});
 </script>
 
 <style scoped>

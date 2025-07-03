@@ -98,7 +98,7 @@ const submitBid = async () => {
     });
     toast.success('🎉 Bid successfully created!');
     form.value.amount = '';
-    router.push('/bids');
+    router.push('/bid');
   } catch (err) {
     toast.error('❌ Failed to create bid.');
   } finally {

@@ -10,7 +10,6 @@ from .serializers import RegisterSerializer , generate_otp
 from django.contrib.auth import authenticate
 from .models import User
 from .serializers import UserSerializer
-from accounts.utils.send_whatsapp import send_whatsapp
 from accounts.utils.send_email import send_otp_email
 from bids.models import Bid
 from django.conf import settings
@@ -132,30 +131,3 @@ def enter_auction_room(request):
 
     return Response({"message": "You have entered the auction room."})
 
-class SendWhatsAppOTP(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        user = request.user
-        otp = str(random.randint(100000, 999999))
-        user.phone_otp = otp
-        user.save()
-        print("OTP for phone_number",otp)
-        send_whatsapp(
-            phone=user.phone_number,
-            message=f"Your BID 'N' GIVE WhatsApp OTP is *{otp}*"
-        )
-        return Response({'message': 'OTP sent to your WhatsApp successfully.'})
-    
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def verify_whatsapp_otp(request):
-    otp = request.data.get('otp')
-    user = request.user
-
-    if user.phone_otp == otp:
-        user.is_phone_verified = True
-        user.phone_otp = None
-        user.save()
-        return Response({'message': 'Phone verified successfully'})
-    return Response({'error': 'Invalid OTP'}, status=400)

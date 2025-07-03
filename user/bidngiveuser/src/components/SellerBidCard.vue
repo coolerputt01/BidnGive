@@ -2,7 +2,7 @@
   <div class="seller-bid-card" v-if="bid">
     <div class="header">
       <h3>💼 Withdrawal — ₦{{ bid.amount.toLocaleString() }}</h3>
-      <span class="status" :class="bid.status">{{ formatStatus(bid.status) }}</span>
+      <span class="status" :class="['status', bid.status]">{{ formatStatus(bid.status) }}</span>
     </div>
 
     <div class="details">
@@ -16,25 +16,24 @@
       <p><strong>Name:</strong> {{ bid.counterparty_name }}</p>
       <p>
         <strong>Phone:</strong>
-        <a :href="`https://wa.me/${bid.counterparty_phone}`" target="_blank">
+        <a :href="`https://wa.me/${bid.counterparty_phone}`" target="_blank" rel="noopener noreferrer">
           {{ bid.counterparty_phone }}
         </a>
       </p>
+      <p><strong>Bank:</strong> {{ bid.counterparty_bank || 'N/A' }}</p>
+      <p><strong>Account Number:</strong> {{ bid.counterparty_account || 'N/A' }}</p>
+      <p><strong>Account Name:</strong> {{ bid.counterparty_account_name || 'N/A' }}</p>
     </div>
 
     <div v-if="bid.status === 'merged'" class="payment-proof">
       <h4>📎 Payment Proof</h4>
       <div v-if="bid.payment_proof">
         <img :src="bid.payment_proof" alt="Proof" class="proof-img" />
-        <button @click="confirmPayment">✅ Confirm Payment</button>
       </div>
       <div v-else>
-        <p>Waiting for buyer to upload proof.</p>
+        <p>No payment proof uploaded yet.</p>
       </div>
-    </div>
-
-    <div v-if="bid.status === 'pending'" class="actions">
-      <button class="cancel-btn" @click="cancelBid">❌ Cancel Withdrawal</button>
+      <button @click="confirmPayment" class="confirm-btn">✅ Confirm Payment</button>
     </div>
   </div>
 </template>
@@ -54,12 +53,14 @@ const emit = defineEmits(['action'])
 
 const token = localStorage.getItem('access_token')
 
-const formatDate = (iso) =>
-  new Date(iso).toLocaleDateString('en-GB', {
+const formatDate = (iso) => {
+  if (!iso) return 'N/A'
+  return new Date(iso).toLocaleDateString('en-GB', {
     day: '2-digit',
     month: 'short',
     year: 'numeric'
   })
+}
 
 const formatStatus = (status) =>
   ({
@@ -67,8 +68,9 @@ const formatStatus = (status) =>
     merged: '💸 Awaiting Payment',
     paid: '💳 Paid by Buyer',
     confirmed: '✅ Confirmed',
-    expired: '⌛ Expired'
-  }[status] || status)
+    expired: '⌛ Expired',
+    cancelled: '❌ Cancelled'
+  }[status] || status?.toUpperCase() || 'UNKNOWN')
 
 const timeLeft = (mergedAt) => {
   if (!mergedAt) return 'N/A'
@@ -98,23 +100,6 @@ const confirmPayment = async () => {
     toast.error('Confirmation failed.')
   }
 }
-
-const cancelBid = async () => {
-  try {
-    await axios.delete(
-      `https://bidngive.onrender.com/api/bids/${props.bid.id}/`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      }
-    )
-    toast.success('Withdrawal cancelled.')
-    emit('action')
-  } catch {
-    toast.error('Failed to cancel withdrawal.')
-  }
-}
 </script>
 
 <style scoped>
@@ -140,8 +125,16 @@ const cancelBid = async () => {
   border-radius: 18px;
   font-size: 0.85em;
   font-weight: bold;
+  text-transform: uppercase;
   color: #fff;
 }
+
+/* Default status color (if class is missing) */
+.status:not(.pending):not(.merged):not(.confirmed):not(.expired):not(.cancelled) {
+  background-color: #666;
+}
+
+/* Specific status styles */
 .status.pending {
   background-color: #ffc107;
   color: #000;
@@ -154,6 +147,9 @@ const cancelBid = async () => {
 }
 .status.expired {
   background-color: #9e9e9e;
+}
+.status.cancelled {
+  background-color: #d32f2f;
 }
 
 .details .info {
@@ -172,11 +168,7 @@ const cancelBid = async () => {
   margin-bottom: 10px;
 }
 
-.actions {
-  margin-top: 20px;
-}
-
-button {
+.confirm-btn {
   background-color: #17a35e;
   color: white;
   padding: 12px 16px;
@@ -185,14 +177,9 @@ button {
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.3s ease;
+  margin-top: 10px;
 }
-button:hover {
+.confirm-btn:hover {
   background-color: #128f4a;
-}
-.cancel-btn {
-  background-color: #f44336;
-}
-.cancel-btn:hover {
-  background-color: #d32f2f;
 }
 </style>

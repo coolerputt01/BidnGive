@@ -21,11 +21,27 @@
         <strong>Status:</strong>
         <span class="capitalize">{{ bid.status }}</span>
       </div>
+
+      <!-- ❗ Not verified notice -->
+      <div
+        v-if="bid.status === 'paid' && !bid.receiver_confirmed"
+        class="not-verified"
+      >
+        ❗ Payment not verified by receiver yet.
+      </div>
     </div>
 
     <div class="bid-actions">
       <!-- Cancel button only for pending bids -->
-      <button v-if="canCancel" class="btn cancel-btn" @click="cancelBid">❌ Cancel</button>
+      <button
+        v-if="canCancel"
+        class="btn cancel-btn"
+        :disabled="loading"
+        @click="cancelBid"
+      >
+        <span v-if="loading">⏳ Cancelling...</span>
+        <span v-else>❌ Cancel</span>
+      </button>
 
       <button
         v-if="bid.status === 'paid' && bid.receiver_confirmed"
@@ -46,6 +62,7 @@
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import axios from 'axios'
 import { toast } from 'vue3-toastify'
 
@@ -53,27 +70,31 @@ const props = defineProps({ bid: Object })
 const emit = defineEmits(['action'])
 const token = localStorage.getItem('access_token')
 
+const loading = ref(false)
+
 const formatStatus = (status) => ({
   pending: '🕒 Pending',
   merged: '🔗 Merged',
   paid: '💳 Paid',
   completed: '✅ Completed',
-  expired: '⌛ Expired'
+  expired: '⌛ Expired',
+  cancelled: '❌ Cancelled'
 })[status] || status
 
 const canCancel = props.bid.status === 'pending'
 
 const cancelBid = async () => {
+  loading.value = true
   try {
-    await axios.post(
-      `https://bidngive.onrender.com/api/bids/cancel/`,
-      { bid_id: props.bid.id },
-      { headers: { Authorization: `Bearer ${token}` } }
-    )
-    toast.success('Investment cancelled successfully')
+    await axios.delete(`https://bidngive.onrender.com/api/bids/${props.bid.id}/`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    toast.success('Bid cancelled successfully.')
     emit('action')
   } catch (err) {
-    toast.error(err.response?.data?.error || 'Failed to cancel investment')
+    toast.error('Failed to cancel bid.')
+  } finally {
+    loading.value = false
   }
 }
 
@@ -117,7 +138,6 @@ const withdraw = async () => {
 </script>
 
 <style scoped>
-/* Same styling as before */
 .bid-card {
   background: #ffffff;
   border-radius: 18px;
@@ -170,6 +190,9 @@ const withdraw = async () => {
 .status.expired {
   background-color: #9e9e9e;
 }
+.status.cancelled {
+  background-color: #d32f2f;
+}
 .bid-body {
   margin-top: 20px;
 }
@@ -217,5 +240,16 @@ const withdraw = async () => {
 }
 .withdraw-btn:hover {
   background-color: #b91c1c;
+}
+
+.not-verified {
+  margin-top: 12px;
+  padding: 10px;
+  background-color: #fff3cd;
+  border: 1px solid #ffeeba;
+  border-radius: 8px;
+  color: #856404;
+  font-size: 0.9rem;
+  text-align: center;
 }
 </style>
