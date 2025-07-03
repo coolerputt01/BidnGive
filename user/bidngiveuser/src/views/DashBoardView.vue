@@ -38,28 +38,28 @@ function copyCode() {
 
 function startCountdown(initialSeconds) {
   let remaining = initialSeconds;
-  canJoinAuction.value = true;
   clearInterval(intervalId);
 
   intervalId = setInterval(() => {
     if (remaining <= 0) {
       clearInterval(intervalId);
+      canJoinAuction.value = false;
       fetchAuctionData();
       return;
     }
 
-    if (remaining <= initialSeconds - 60) {
-      canJoinAuction.value = false;
-    }
-
+    // Only allow joining in the first 60 seconds
+    canJoinAuction.value = remaining <= 60;
 
     const hrs = Math.floor(remaining / 3600);
     const mins = Math.floor((remaining % 3600) / 60);
     const secs = remaining % 60;
     countdown.value = `${hrs}h :${String(mins).padStart(2, '0')}m :${String(secs).padStart(2, '0')}s`;
+
     remaining -= 1;
   }, 1000);
 }
+
 
 async function fetchAuctionData() {
   try {
