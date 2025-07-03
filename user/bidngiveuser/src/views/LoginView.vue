@@ -23,26 +23,18 @@ const login = async () => {
       password: password.value,
     });
 
-    const { access, refresh, is_phone_verified } = response.data;
+    const { access, refresh } = response.data;
 
     localStorage.setItem("access_token", access);
     localStorage.setItem("refresh_token", refresh);
     localStorage.setItem("userInfo", JSON.stringify({ username: username.value }));
 
-    if (!is_phone_verified) {
-      await axios.post("https://bidngive.onrender.com/api/accounts/send-whatsapp-otp/", {}, {
-        headers: { Authorization: `Bearer ${access}` }
-      });
-      toast.success("OTP sent to your WhatsApp.");
-    }
-
     toast.success("Login successful!");
     setTimeout(() => {
-      router.push('/dashboard')
-    }, 200)
+      router.push('/dashboard');
+    }, 200);
   } catch (err) {
     toast.error("Invalid credentials or user does not exist");
-    console.log("hi")
   } finally {
     loading.value = false;
   }
@@ -87,7 +79,7 @@ const login = async () => {
 .page {
   height: 100vh;
   width: 100vw;
-  background-color: #fdfdfc; /* clean solid tone */
+  background-color: #fdfdfc;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -111,9 +103,6 @@ const login = async () => {
 }
 .logo span {
   color: #222;
-}
-.form-header {
-  width: 100%;
 }
 .form-header > * {
   text-align: center !important;
