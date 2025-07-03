@@ -29,7 +29,7 @@ class Bid(models.Model):
     type = models.CharField(max_length=20, choices=TYPE_CHOICES, default='investment')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
 
-    merged_bid = models.OneToOneField('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='paired_bid')
+    merged_bid = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='merged_bids')
     merged_at = models.DateTimeField(null=True, blank=True)
 
     payment_proof = models.ImageField(upload_to='proofs/', null=True, blank=True)
