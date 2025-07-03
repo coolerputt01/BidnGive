@@ -23,12 +23,24 @@
       </div>
     </div>
 
-    <div
-      class="bid-actions"
-      v-if="bid.status === 'paid' && bid.receiver_confirmed"
-    >
-      <button class="btn recommit-btn" @click="recommit">🔁 Recommit</button>
-      <button class="btn withdraw-btn" @click="withdraw">💸 Withdraw</button>
+    <div class="bid-actions">
+      <!-- Cancel button only for pending bids -->
+      <button v-if="canCancel" class="btn cancel-btn" @click="cancelBid">❌ Cancel</button>
+
+      <button
+        v-if="bid.status === 'paid' && bid.receiver_confirmed"
+        class="btn recommit-btn"
+        @click="recommit"
+      >
+        🔁 Recommit
+      </button>
+      <button
+        v-if="bid.status === 'paid' && bid.receiver_confirmed"
+        class="btn withdraw-btn"
+        @click="withdraw"
+      >
+        💸 Withdraw
+      </button>
     </div>
   </div>
 </template>
@@ -48,6 +60,22 @@ const formatStatus = (status) => ({
   completed: '✅ Completed',
   expired: '⌛ Expired'
 })[status] || status
+
+const canCancel = props.bid.status === 'pending'
+
+const cancelBid = async () => {
+  try {
+    await axios.post(
+      `https://bidngive.onrender.com/api/bids/cancel/`,
+      { bid_id: props.bid.id },
+      { headers: { Authorization: `Bearer ${token}` } }
+    )
+    toast.success('Investment cancelled successfully')
+    emit('action')
+  } catch (err) {
+    toast.error(err.response?.data?.error || 'Failed to cancel investment')
+  }
+}
 
 const recommit = async () => {
   try {
@@ -89,6 +117,7 @@ const withdraw = async () => {
 </script>
 
 <style scoped>
+/* Same styling as before */
 .bid-card {
   background: #ffffff;
   border-radius: 18px;
@@ -167,6 +196,13 @@ const withdraw = async () => {
   cursor: pointer;
   transition: background-color 0.3s ease;
   font-size: 0.95rem;
+}
+.cancel-btn {
+  background-color: #d32f2f;
+  color: white;
+}
+.cancel-btn:hover {
+  background-color: #b71c1c;
 }
 .recommit-btn {
   background-color: #0c69c8;

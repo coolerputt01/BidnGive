@@ -21,7 +21,10 @@ const createInvestment = async () => {
   try {
     const res = await axios.post(
       'https://bidngive.onrender.com/api/admin/create-investment/',
-      { email: email.value, amount: amount.value, plan: '50_24' ,expected_return: amount.value + (amount.value/2)
+      {
+        email: email.value,
+        amount: amount.value,
+        plan: plan.value
       },
       { headers }
     );
@@ -43,17 +46,22 @@ const createInvestment = async () => {
     <form @submit.prevent="createInvestment" class="investment-form">
       <label>
         User Email:
-        <input type="email" v-model="email" required />
+        <input type="email" v-model="email" required placeholder="user@example.com" />
       </label>
       <label>
         Amount (₦):
-        <input type="number" v-model="amount" required />
+        <input type="number" v-model="amount" min="1" required placeholder="1000" />
       </label>
       <label>
         Plan Name:
-        <input type="text" v-model="plan" required placeholder="e.g., Basic / Silver / Gold" />
+        <input
+          type="text"
+          v-model="plan"
+          required
+          placeholder="e.g., 50_24 (means 50% in 24 hours)"
+        />
       </label>
-      <button :disabled="loading">
+      <button :disabled="loading" type="submit">
         {{ loading ? 'Processing...' : 'Create Investment' }}
       </button>
     </form>
@@ -62,40 +70,62 @@ const createInvestment = async () => {
 
 <style scoped>
 .investment-container {
-  max-width: 500px;
+  max-width: 480px;
   margin: 40px auto;
   padding: 30px;
   background-color: #fff;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
+
 .investment-form {
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
+
 label {
   display: flex;
   flex-direction: column;
   font-weight: 600;
   color: #333;
+  font-size: 1rem;
 }
+
 input {
   padding: 10px;
   border: 1px solid #ccc;
   border-radius: 8px;
   margin-top: 6px;
+  font-size: 1rem;
+  outline-offset: 2px;
 }
+
+input:focus {
+  border-color: #17a35e;
+  outline: none;
+  box-shadow: 0 0 6px #17a35eaa;
+}
+
 button {
   padding: 12px;
-  background: #04724D;
+  background: #04724d;
   color: #fff;
   border: none;
   border-radius: 10px;
-  font-weight: bold;
+  font-weight: 700;
   cursor: pointer;
+  font-size: 1.1rem;
+  transition: background-color 0.25s ease;
 }
-button:hover {
+
+button:disabled {
+  background: #9bc7b7;
+  cursor: not-allowed;
+}
+
+button:hover:not(:disabled) {
   background-color: #03563a;
 }
 </style>

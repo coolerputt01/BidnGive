@@ -13,6 +13,7 @@ const fetchBids = async () => {
   try {
     const res = await axios.get("https://bidngive.onrender.com/api/admin/pending-bids/", { headers });
     bids.value = res.data;
+    console.log(bids.value)
   } catch (err) {
     toast.error("Failed to fetch bids");
   }

@@ -10,47 +10,56 @@
 
     <!-- Admin Action Grid -->
     <section class="dashboard-grid">
-      <div class="dashboard-card" @click="goTo('/admin/cancel-recommitment')">
+      <div class="dashboard-card" @click="goTo('/cancel-investment')">
         <div class="icon">🚫</div>
         <h3>Cancel Recommitment</h3>
         <p>Manually cancel recommitments for stuck bids.</p>
       </div>
 
-      <div class="dashboard-card" @click="goTo('/admin/create-investment')">
+      <div class="dashboard-card" @click="goTo('/create-investment')">
         <div class="icon">➕</div>
         <h3>Create Investment</h3>
         <p>Create a new investment on behalf of any user.</p>
       </div>
 
-      <div class="dashboard-card" @click="goTo('/admin/user-management')">
-        <div class="icon">👥</div>
-        <h3>Users & List</h3>
-        <p>View users, suspend accounts, or inspect referrals.</p>
-      </div>
+      <div class="dashboard-card" @click="goTo('/user-details')">
+          <div class="icon">👤</div>
+          <h3>User Details</h3>
+          <p>View individual user profiles and details.</p>
+        </div>
 
-      <div class="dashboard-card" @click="goTo('/admin/withdrawals')">
+        <div class="dashboard-card" @click="goTo('/user-list')">
+          <div class="icon">👥</div>
+          <h3>User List</h3>
+          <p>Browse and manage the list of all users.</p>
+        </div>
+
+      <div class="dashboard-card" @click="goTo('/withdrawals')">
         <div class="icon">💸</div>
         <h3>Withdrawals</h3>
         <p>Manage referral bonus withdrawal requests.</p>
       </div>
 
-      <div class="dashboard-card" @click="goTo('/admin/pending-bids')">
-        <div class="icon">🕒</div>
-        <h3>Pending Bids</h3>
-        <p>Review bids awaiting merge or action.</p>
+      <div class="dashboard-card" @click="goTo('/manual-merge')">
+        <div class="icon">🔄</div>
+        <h3>Manual Merging</h3>
+        <p>Manually merge pending bids during auction windows.</p>
+      </div>
+
+
+      <div class="dashboard-card" @click="goTo('/change-password')">
+        <div class="icon">🔐</div>
+        <h3>Change User Login</h3>
+        <p>Reset or update a user's login password.</p>
       </div>
     </section>
   </main>
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router';
-
-const router = useRouter();
-
-const goTo = (path) => {
-  router.push(path);
-};
+import { useRouter } from 'vue-router'
+const router = useRouter()
+const goTo = (path) => router.push(path)
 </script>
 
 <style scoped>

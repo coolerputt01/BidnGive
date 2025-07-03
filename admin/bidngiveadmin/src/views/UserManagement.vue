@@ -32,7 +32,11 @@ const loginAsUser = async () => {
     localStorage.setItem("refresh_token", res.data.refresh);
     localStorage.setItem("userInfo", JSON.stringify({ username: res.data.username, email: res.data.email }));
     toast.success(`Logged in as ${res.data.username}`);
-    window.location.href = "/"; // Redirect to user dashboard
+
+    // Redirect to the main platform after short delay
+    setTimeout(() => {
+      window.location.href = "https://bidngive.com/#/dashboard";
+    }, 1000);
   } catch (err) {
     toast.error(err.response?.data?.error || "Login failed");
   }
@@ -60,34 +64,43 @@ const loginAsUser = async () => {
   padding: 30px;
   border-radius: 12px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  font-family: 'Segoe UI', sans-serif;
 }
+
 .input {
   width: 100%;
   padding: 10px;
   margin-top: 10px;
   border: 1px solid #ccc;
   border-radius: 6px;
+  font-size: 1em;
 }
+
 .btn-group {
   display: flex;
   gap: 10px;
   margin-top: 20px;
 }
+
 button {
   padding: 10px 18px;
   border: none;
   border-radius: 6px;
   cursor: pointer;
   font-weight: 600;
+  font-size: 0.95em;
 }
+
 .danger {
   background: #c62828;
   color: white;
 }
+
 .success {
   background: #2e7d32;
   color: white;
 }
+
 .primary {
   background: #1565c0;
   color: white;

@@ -1,3 +1,59 @@
+<script setup>
+import { onMounted, ref } from 'vue'
+import axios from 'axios'
+import { toast } from 'vue3-toastify'
+
+const users = ref([])
+const token = localStorage.getItem('access_token')
+const headers = { Authorization: `Bearer ${token}` }
+
+const fetchUsers = async () => {
+  try {
+    const res = await axios.get('https://bidngive.onrender.com/api/admin/admin/all-users/', { headers })
+    users.value = res.data
+  } catch (err) {
+    toast.error('Failed to fetch users')
+  }
+}
+
+const blockUser = async (email) => {
+  try {
+    await axios.post('https://bidngive.onrender.com/api/admin/user/block/', { email }, { headers })
+    toast.success(`${email} blocked successfully`)
+    fetchUsers()
+  } catch (err) {
+    toast.error(err.response?.data?.error || `Failed to block ${email}`)
+  }
+}
+
+const unblockUser = async (email) => {
+  try {
+    await axios.post('https://bidngive.onrender.com/api/admin/user/unblock/', { email }, { headers })
+    toast.success(`${email} unblocked successfully`)
+    fetchUsers()
+  } catch (err) {
+    toast.error(err.response?.data?.error || `Failed to unblock ${email}`)
+  }
+}
+
+const loginAs = async (email) => {
+  try {
+    const res = await axios.post('https://bidngive.onrender.com/api/admin/user/login-as/', { email }, { headers })
+    localStorage.setItem('access_token', res.data.access)
+    localStorage.setItem('refresh_token', res.data.refresh)
+    localStorage.setItem('userInfo', JSON.stringify({ username: res.data.username, email: res.data.email }))
+    toast.success(`Logged in as ${res.data.username}`)
+    setTimeout(() => {
+      window.location.href = '/'
+    }, 1000)
+  } catch (err) {
+    toast.error(err.response?.data?.error || `Failed to login as ${email}`)
+  }
+}
+
+onMounted(fetchUsers)
+</script>
+
 <template>
   <div class="user-page">
     <section class="content">
@@ -36,59 +92,6 @@
     </section>
   </div>
 </template>
-
-<script setup>
-import { onMounted, ref } from 'vue'
-import axios from 'axios'
-import { toast } from 'vue3-toastify'
-
-const users = ref([])
-const token = localStorage.getItem('access_token')
-const headers = { Authorization: `Bearer ${token}` }
-
-const fetchUsers = async () => {
-  try {
-    const res = await axios.get('https://bidngive.onrender.com/api/admin/admin/all-users/', { headers })
-    users.value = res.data
-  } catch {
-    toast.error('Failed to fetch users')
-  }
-}
-
-const blockUser = async (email) => {
-  try {
-    await axios.post('https://bidngive.onrender.com/api/admin/user/block/', { email }, { headers })
-    toast.success('User blocked')
-    fetchUsers()
-  } catch {
-    toast.error('Failed to block user')
-  }
-}
-
-const unblockUser = async (email) => {
-  try {
-    await axios.post('https://bidngive.onrender.com/api/admin/user/unblock/', { email }, { headers })
-    toast.success('User unblocked')
-    fetchUsers()
-  } catch {
-    toast.error('Failed to unblock user')
-  }
-}
-
-const loginAs = async (email) => {
-  try {
-    const res = await axios.post('https://bidngive.onrender.com/api/admin/user/login-as/', { email }, { headers })
-    localStorage.setItem('access_token', res.data.access)
-    localStorage.setItem('refresh_token', res.data.refresh)
-    localStorage.setItem('userInfo', JSON.stringify({ username: res.data.username, email: res.data.email }))
-    window.location.href = '/'
-  } catch {
-    toast.error('Failed to login as user')
-  }
-}
-
-onMounted(fetchUsers)
-</script>
 
 <style scoped>
 .user-page {

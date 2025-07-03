@@ -8,7 +8,7 @@ const navItems = [
   { label: 'Home', path: '/dashboard', icon: 'home' },
   { label: 'Bids', path: '/bid', icon: 'bid' },
   { label: 'Withdrawals', path: '/withdraw', icon: 'withdraw', noFilled: true },
-  { label: 'Merge', path: '/merge-info', icon: 'auction' },
+  { label: 'Merge', path: '/merge-info', icon: 'auction',noFilled: true },
   { label: 'Profile', path: '/profile', icon: 'profile' }
 ]
 

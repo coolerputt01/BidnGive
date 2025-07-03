@@ -7,7 +7,7 @@
       <form @submit.prevent="loginAdmin" class="form">
         <div class="form-group">
           <label>Email</label>
-          <input v-model="form.email" type="email" placeholder="admin@example.com" required />
+          <input v-model="form.email" type="text" placeholder="admin@example.com" required />
         </div>
 
         <div class="form-group">

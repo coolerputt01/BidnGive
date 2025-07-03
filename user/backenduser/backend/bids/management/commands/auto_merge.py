@@ -1,15 +1,21 @@
+import logging
 from django.core.management.base import BaseCommand
 from django.utils.timezone import now
 from bids.models import Bid
 from django.db import transaction
 from decimal import Decimal
 
+# Configure logging
+logger = logging.getLogger(__name__)
+
 class Command(BaseCommand):
     help = 'Merge sellers (withdrawal) with buyers (investment) based on amount.'
 
     def handle(self, *args, **options):
-        buyers = list(Bid.objects.filter(status='pending', type='investment').order_by('-amount'))  # big buyers first
-        sellers = list(Bid.objects.filter(status='pending', type='withdrawal').order_by('amount'))  # small sellers first
+        logger.info("🔄 Starting merge process...")
+
+        buyers = Bid.objects.filter(status='pending', type='investment').order_by('-amount')
+        sellers = Bid.objects.filter(status='pending', type='withdrawal').order_by('amount')
 
         used_buyers = set()
         used_sellers = set()
@@ -19,7 +25,7 @@ class Command(BaseCommand):
             if seller.id in used_sellers:
                 continue
 
-            # Try to find one buyer with equal amount
+            # Try to find one matching buyer
             for buyer in buyers:
                 if buyer.id in used_buyers:
                     continue
@@ -28,9 +34,10 @@ class Command(BaseCommand):
                     used_buyers.add(buyer.id)
                     used_sellers.add(seller.id)
                     merged_count += 2
+                    logger.info(f"🔗 Merged Buyer #{buyer.id} with Seller #{seller.id} (Exact Match)")
                     break
             else:
-                # Try to combine multiple buyers to match seller amount
+                # Try to combine multiple buyers
                 match_buyers = []
                 total = Decimal('0')
                 for buyer in buyers:
@@ -50,18 +57,21 @@ class Command(BaseCommand):
                             buyer.merged_at = now()
                             buyer.save()
                             used_buyers.add(buyer.id)
+                            logger.info(f"🔗 Sub-Merged Buyer #{buyer.id} into Seller #{seller.id}")
 
                         seller.status = 'merged'
+                        seller.merged_bid = match_buyers[0]  # optional representative
                         seller.merged_at = now()
-                        seller.merged_bid = match_buyers[0]  # optional: just assign one
                         seller.save()
                         used_sellers.add(seller.id)
                         merged_count += len(match_buyers) + 1
+                        logger.info(f"🔗 Seller #{seller.id} fully merged with {len(match_buyers)} buyers")
 
         if merged_count:
-            self.stdout.write(self.style.SUCCESS(f"✅ {merged_count} bids merged successfully."))
+            logger.success = getattr(logger, "success", logger.info)
+            logger.success(f"✅ Total merged: {merged_count} bids.")
         else:
-            self.stdout.write("❌ No matching buyer-seller pairs found.")
+            logger.warning("❌ No matching buyer-seller pairs found.")
 
     def merge_pair(self, buyer, seller):
         with transaction.atomic():

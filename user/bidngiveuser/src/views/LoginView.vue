@@ -60,7 +60,7 @@ const login = async () => {
 
       <form @submit.prevent="login" class="login-form">
         <div class="form-group">
-          <input v-model="username" type="email" id="email" required placeholder=" " />
+          <input v-model="username" type="text" id="email" required placeholder=" " />
           <label for="email">Email</label>
         </div>
 

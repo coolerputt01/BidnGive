@@ -1,5 +1,20 @@
+<<script setup>
+import { ref, computed } from 'vue';
+import { useRoute } from 'vue-router';
+
+const isOpen = ref(false);
+const toggleMenu = () => {
+  isOpen.value = !isOpen.value;
+};
+
+const route = useRoute();
+
+// Compute a boolean to hide navbar on login page (adjust path as needed)
+const showNavbar = computed(() => route.name !== 'AdminLogin'); // or route.path !== '/admin/login'
+</script>
+
 <template>
-  <nav class="navbar">
+  <nav v-if="showNavbar" class="navbar">
     <div class="logo">BID "N" GIVE Admin</div>
 
     <!-- Hamburger -->
@@ -10,8 +25,8 @@
     <!-- Navigation Links -->
     <ul :class="['nav-links', { open: isOpen }]">
       <li><router-link to="/dashboard">Dashboard</router-link></li>
-      <li><router-link to="/pending-bids">Pending Bids</router-link></li>
-      <li><router-link to="/merge-settings">Merge Settings</router-link></li>
+      <li><router-link to="/manual-merging">Manual Merging</router-link></li>
+      <li><router-link to="/change-logins">Change Logins</router-link></li>
       <li><router-link to="/create-investment">Create Investment</router-link></li>
       <li><router-link to="/cancel-investment">Cancel Recommitment</router-link></li>
       <li><router-link to="/user-details">Users</router-link></li>
@@ -20,14 +35,6 @@
   </nav>
 </template>
 
-<script setup>
-import { ref } from 'vue'
-
-const isOpen = ref(false)
-const toggleMenu = () => {
-  isOpen.value = !isOpen.value
-}
-</script>
 
 <style scoped>
 .navbar {
