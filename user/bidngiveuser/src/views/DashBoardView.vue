@@ -6,6 +6,7 @@ import axios from 'axios';
 import LoadingScreen from '@/components/LoadingScreen.vue';
 
 const username = ref('');
+const canJoinAuction = ref(true);
 const wallet = ref(0);
 const bids = ref(0);
 const countdown = ref('');
@@ -37,6 +38,7 @@ function copyCode() {
 
 function startCountdown(initialSeconds) {
   let remaining = initialSeconds;
+  canJoinAuction.value = true;
   clearInterval(intervalId);
 
   intervalId = setInterval(() => {
@@ -46,10 +48,15 @@ function startCountdown(initialSeconds) {
       return;
     }
 
+    if (remaining <= initialSeconds - 60) {
+      canJoinAuction.value = false;
+    }
+
+
     const hrs = Math.floor(remaining / 3600);
     const mins = Math.floor((remaining % 3600) / 60);
     const secs = remaining % 60;
-    countdown.value = `${hrs}h :${mins}m :${secs}s`;
+    countdown.value = `${hrs}h :${String(mins).padStart(2, '0')}m :${String(secs).padStart(2, '0')}s`;
     remaining -= 1;
   }, 1000);
 }
@@ -60,6 +67,7 @@ async function fetchAuctionData() {
     const seconds = res.data.remaining_seconds;
     marketStatus.value = res.data.market_status;
     nextAuctionTime.value = res.data.next_auction;
+    clearInterval(intervalId);
     startCountdown(seconds);
   } catch (err) {
     console.error("Failed to fetch auction status", err);
@@ -149,7 +157,7 @@ async function withdrawReferral() {
 }
 
 function viewBid() {
-  router.push('/bid');
+  router.push('/create-bid');
 }
 
 onMounted(async () => {
@@ -233,12 +241,12 @@ onUnmounted(() => {
 
           <div style="margin-top: 12px; text-align: center;">
             <button
-              v-if="!isAuctionRoom && marketStatus === 'open'"
-              :disabled="joiningAuction"
+              v-if="marketStatus === 'open'"
+              :disabled="joiningAuction || !canJoinAuction"
               @click="joinAuctionRoom"
               style="width: 60vw; padding: 10px; background-color: #fff; font-weight: 600; border-radius: 50px; border: none; cursor: pointer;"
             >
-              {{ joiningAuction ? 'Joining...' : 'Join Auction Room' }}
+              {{ joiningAuction ? 'Joining...' : canJoinAuction ? 'Join Auction Room' : '⏳ Time Up!' }}
             </button>
 
             <p v-else-if="isAuctionRoom && marketStatus === 'open'" style="color: #e0ffe0; font-size: 0.95em; margin-top: 10px;">
@@ -282,12 +290,11 @@ onUnmounted(() => {
 
         <div style="margin-top: 4%; background-color: #fff; padding: 20px; width: 80%; border-radius: 12px;">
           <p style="font-size: 1.2em; color: #17a35e; font-weight: 600;">📢 Invite & Earn</p>
-          <p style="color: #444; font-size: 0.95em;">
-            <pre>
-              ₦100 Daily Bonus
-              5% referral bonus
-            </pre>
-          </p>
+          <div style="color: #444; font-size: 0.95em; line-height: 1.6;">
+              <p>₦100 Daily Bonus</p>
+              <p>5% referral bonus</p>
+            </div>
+
           <div style="display: flex; gap: 10px; margin-top: 10px;">
             <input readonly :value="`${baseUrl}?ref=${referralCode}`" style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 6px;" />
             <button @click="copyCode" style="padding: 10px 16px; background-color: #17a35e; color: #fff; font-weight: 600; border-radius: 6px; cursor: pointer;">

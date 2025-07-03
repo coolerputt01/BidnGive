@@ -1,86 +1,61 @@
 <template>
-  <LoadingScreen v-if="loading" />
-  <section v-else class="bids-page" style="margin-bottom: 5em;">
+  <section  class="bids-page" style="padding-bottom: 7em;">
     <!-- Header -->
-    <h2 class="page-title">Your Bids</h2>
+    <div class="page-header">
+      <h1>Your Investment Bids</h1>
+      <p>Track and manage your investment bids below.</p>
+    </div>
 
-    <!-- Auction Countdown -->
+    <!-- Filter Tabs -->
+    <div class="filter-tabs">
+      <button
+        v-for="option in filterOptions"
+        :key="option"
+        :class="{ active: filter === option }"
+        @click="filter = option"
+      >
+        {{ option }}
+      </button>
+    </div>
+
+    <!-- Auction Info -->
     <div class="auction-info">
       <span class="countdown">
-        ⏰ Next auction starts in {{ formatTime(auctionInfo.remaining_seconds) }}
+        ⏰ Auction in {{ formatTime(auctionInfo.remaining_seconds) }}
       </span>
-      <span
-        class="status"
-        :class="{ open: auctionInfo.market_status === 'open', closed: auctionInfo.market_status !== 'open' }"
-      >
+      <span class="status" :class="auctionInfo.market_status">
         {{ auctionInfo.market_status === 'open' ? 'Market Open' : 'Market Closed' }}
       </span>
     </div>
 
-    <!-- Bids Display -->
-    <div v-if="bids.length > 0">
-      <div v-for="bid in bids" :key="bid.id">
+    <!-- Bid List -->
+    <div class="bid-list" v-if="filteredBids.length">
+      <div class="bid-card" v-for="bid in filteredBids" :key="bid.id">
         <BidCard v-if="bid.type === 'investment'" :bid="bid" @action="fetchBids" />
         <SellerBidCard v-else :bid="bid" @action="fetchBids" />
       </div>
-
     </div>
 
-    <!-- No Bids Message -->
+    <!-- Empty State -->
     <div v-else class="no-bids">
-      <p>No bids available. Create one below.</p>
+      <img src="/icons/empty.svg" alt="No Bids" class="empty-img" />
+      <p>No {{ filter.toLowerCase() }} bids available.</p>
     </div>
-
-    <!-- Create Investment Bid Form -->
-    <form class="create-form" @submit.prevent="submitBid">
-      <label for="amount">Amount (₦):</label>
-      <input type="number" id="amount" v-model="form.amount" required />
-      <span>Min: ₦10,000 Max: ₦500,000</span>
-
-      <!-- Live Summary -->
-      <div v-if="form.amount" class="live-summary">
-        <p><strong>📈 Expected Return:</strong> ₦{{ expectedReturn }}</p>
-        <p><strong>💹 Profit:</strong> ₦{{ profitAmount }}</p>
-        <p><strong>⏳ Duration:</strong> 24 hours</p>
-        <p><strong>🔁 Recommitment:</strong> 100% mandatory</p>
-      </div>
-
-      <button type="submit" :disabled="userHasPendingBid">
-        {{ userHasPendingBid ? 'Pending Bid Exists' : 'Create Investment Bid' }}
-      </button>
-    </form>
   </section>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import { toast } from 'vue3-toastify';
 import axios from 'axios';
 import BidCard from '@/components/BidCard.vue';
 import SellerBidCard from '@/components/SellerBidCard.vue';
-import LoadingScreen from '@/components/LoadingScreen.vue';
 
-const loading = ref(true); // added loading flag
-
-
-const form = ref({ amount: '' });
 const bids = ref([]);
 const auctionInfo = ref({ remaining_seconds: 0, market_status: '' });
-const loadingSubmit = ref(false);
-const currentUserId = ref(null);
 const token = localStorage.getItem('access_token');
 
-const fetchProfile = async () => {
-  try {
-    const res = await axios.get('https://bidngive.onrender.com/api/accounts/me/', {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    currentUserId.value = res.data.id;
-    console.log(currentUserId)
-  } catch (err) {
-    console.error('Failed to fetch profile', err);
-  }
-};
+const filter = ref('All');
+const filterOptions = ['All', 'Pending', 'Merged', 'Paid', 'Expired'];
 
 const fetchBids = async () => {
   try {
@@ -88,7 +63,6 @@ const fetchBids = async () => {
       headers: { Authorization: `Bearer ${token}` }
     });
     bids.value = res.data;
-    console.log(bids.value)
   } catch (err) {
     console.error('Failed to fetch bids:', err);
   }
@@ -103,193 +77,129 @@ const fetchAuctionStatus = async () => {
   }
 };
 
-const submitBid = async () => {
-  if (loadingSubmit.value) return;
-  loadingSubmit.value = true;
-
-  const amount = parseFloat(form.value.amount);
-  if (isNaN(amount) || amount < 10000) {
-    toast.error('Amount must be at least ₦10,000');
-    loadingSubmit.value = false;
-    return;
-  } else if (amount > 500000) {
-    toast.error('Amount must be at most ₦500,000');
-    loadingSubmit.value = false;
-    return;
-  }
-
-  const payload = {
-    amount,
-    plan: '50_24'
-  };
-
-  try {
-    await axios.post('https://bidngive.onrender.com/api/bids/', payload, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    toast.success('Bid successfully created!');
-    form.value.amount = '';
-    fetchBids();
-  } catch (err) {
-    toast.error('Failed to create bid.');
-  } finally {
-    loadingSubmit.value = false;
-  }
-};
-
-const userHasPendingBid = computed(() => {
-  return bids.value.some(
-    bid =>
-      bid.user === currentUserId.value &&
-      bid.status !== 'paid' &&
-      bid.status !== 'cancelled' &&
-      bid.status !== 'confirmed'
-  );
+const filteredBids = computed(() => {
+  if (filter.value === 'All') return bids.value;
+  return bids.value.filter(b => b.status.toLowerCase() === filter.value.toLowerCase());
 });
 
 const formatTime = (seconds) => {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
   const s = seconds % 60;
-  return `${h}h : ${m}m : ${s}s`;
+  return `${h}h ${m}m ${s}s`;
 };
 
-onMounted(async () => {
-  try {
-    loading.value = true;
-    await fetchProfile();
-    await fetchBids();
-    await fetchAuctionStatus();
-  } catch (err) {
-    console.error('Error during mounted lifecycle:', err);
-  } finally {
-    loading.value = false;
-  }
+onMounted(() => {
+  fetchBids();
+  fetchAuctionStatus();
 });
-
 
 setInterval(() => {
-  if (auctionInfo.value.remaining_seconds > 0) {
-    auctionInfo.value.remaining_seconds--;
-  }
+  if (auctionInfo.value.remaining_seconds > 0) auctionInfo.value.remaining_seconds--;
 }, 1000);
-
-setInterval(fetchAuctionStatus, 60000);
-
-const expectedReturn = computed(() => {
-  const amt = parseFloat(form.value.amount || 0);
-  return amt > 0 ? Math.round(amt * 1.5).toLocaleString() : '0';
-});
-
-const profitAmount = computed(() => {
-  const amt = parseFloat(form.value.amount || 0);
-  return amt > 0 ? Math.round(amt * 0.5).toLocaleString() : '0';
-});
 </script>
 
 <style scoped>
 .bids-page {
-  background-color: #f4f4f4;
-  padding: 20px;
-  font-family: Arial, sans-serif;
+  padding: 2rem;
+  background-color: #f5f7fb;
+  min-height: 100vh;
 }
 
-.page-title {
+.page-header {
   text-align: center;
-  font-size: 1.5em;
+  margin-bottom: 2rem;
+}
+
+.page-header h1 {
+  font-size: 2rem;
   font-weight: bold;
-  margin-bottom: 10px;
+  color: #191919;
+}
+
+.page-header p {
+  font-size: 1rem;
+  color: #555;
+}
+
+.filter-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+
+.filter-tabs button {
+  padding: 0.6rem 1.4rem;
+  border: none;
+  border-radius: 30px;
+  background-color: #eee;
+  color: #333;
+  font-weight: 600;
+  transition: 0.3s;
+  cursor: pointer;
+}
+
+.filter-tabs button.active {
+  background-color: #17a35e;
+  color: #fff;
 }
 
 .auction-info {
-  text-align: center;
-  margin-bottom: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
 }
 
 .countdown {
-  display: block;
-  color: #004f28;
   background-color: #e0ffe0;
-  font-size: 0.9em;
-  padding: 6px 12px;
+  padding: 0.5rem 1.2rem;
+  border-radius: 20px;
   font-weight: 600;
-  border-radius: 6px;
-  margin-bottom: 8px;
+  color: #004f28;
 }
 
 .status {
-  font-size: 0.9em;
+  padding: 0.5rem 1.2rem;
+  border-radius: 20px;
   font-weight: 600;
-  padding: 6px 12px;
-  border-radius: 50px;
   color: #fff;
-  display: inline-block;
+  text-transform: capitalize;
 }
+
 .status.open {
   background-color: #17a35e;
 }
+
 .status.closed {
   background-color: #95190c;
 }
 
-.live-summary {
-  background: #e9fcef;
-  padding: 12px;
-  border-radius: 8px;
-  margin-top: -10px;
-  font-size: 0.95em;
-  color: #004f28;
+.bid-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.bid-card {
+  background-color: #fff;
+  padding: 1rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .no-bids {
   text-align: center;
-  color: #777;
-  margin-bottom: 20px;
+  color: #888;
+  margin-top: 4rem;
 }
 
-.create-form {
-  background: #fff;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.create-form label {
-  font-weight: 600;
-  color: #333;
-}
-
-.create-form input {
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  margin-top: 5px;
-}
-
-.create-form button {
-  padding: 10px;
-  background-color: #17a35e;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.create-form button:hover:enabled {
-  background-color: #128f4a;
-}
-
-.create-form button:disabled {
-  background-color: #ccc;
-  color: #666;
-  cursor: not-allowed;
+.empty-img {
+  width: 120px;
+  margin-bottom: 1rem;
 }
 </style>

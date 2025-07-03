@@ -58,6 +58,11 @@ const router = createRouter({
       path: '/:pathMatch(.*)*',
       name: '404',
       component: () => import('@/views/NotfoundView.vue'),
+    },
+    {
+      path: '/create-bid',
+      name: 'create-bid',
+      component: () => import('@/views/CreateBidView.vue'),
     }
   ]
 })
