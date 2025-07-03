@@ -9,17 +9,16 @@ from decimal import Decimal
 logger = logging.getLogger(__name__)
 
 class Command(BaseCommand):
-    help = 'Merge sellers (withdrawal) with buyers (investment) based on amount, for users in auction room.'
+    help = 'Merge sellers (withdrawal) with buyers (investment) based on amount, prioritizing multiple buyer combos.'
 
     def handle(self, *args, **options):
         logger.info("🔄 Starting merge process...")
 
-        # Only consider bids whose users are in the auction room
         buyers = Bid.objects.filter(
             status='pending',
             type='investment',
             user__in_auction_room=True
-        ).order_by('-amount')
+        ).order_by('amount')  # Start with smaller buyers
 
         sellers = Bid.objects.filter(
             status='pending',
@@ -35,7 +34,38 @@ class Command(BaseCommand):
             if seller.id in used_sellers:
                 continue
 
-            # Try to find one matching buyer
+            # Try to combine multiple buyers
+            match_buyers = []
+            total = Decimal('0')
+            for buyer in buyers:
+                if buyer.id in used_buyers:
+                    continue
+                if total + buyer.amount <= seller.amount:
+                    match_buyers.append(buyer)
+                    total += buyer.amount
+                if total == seller.amount:
+                    break
+
+            if total == seller.amount and len(match_buyers) >= 1:
+                with transaction.atomic():
+                    for buyer in match_buyers:
+                        buyer.status = 'merged'
+                        buyer.merged_bid = seller
+                        buyer.merged_at = now()
+                        buyer.save()
+                        used_buyers.add(buyer.id)
+                        logger.info(f"🔗 Sub-Merged Buyer #{buyer.id} into Seller #{seller.id}")
+
+                    seller.status = 'merged'
+                    seller.merged_bid = match_buyers[0]  # optional representative
+                    seller.merged_at = now()
+                    seller.save()
+                    used_sellers.add(seller.id)
+                    merged_count += len(match_buyers) + 1
+                    logger.info(f"🔗 Seller #{seller.id} merged with {len(match_buyers)} buyers.")
+                continue  # Skip 1-to-1 matching if multiple matched
+
+            # Try a last-resort 1-to-1 exact match if combo wasn't possible
             for buyer in buyers:
                 if buyer.id in used_buyers:
                     continue
@@ -44,38 +74,8 @@ class Command(BaseCommand):
                     used_buyers.add(buyer.id)
                     used_sellers.add(seller.id)
                     merged_count += 2
-                    logger.info(f"🔗 Merged Buyer #{buyer.id} with Seller #{seller.id} (Exact Match)")
+                    logger.info(f"🔗 Fallback: Single Buyer #{buyer.id} matched with Seller #{seller.id}")
                     break
-            else:
-                # Try to combine multiple buyers
-                match_buyers = []
-                total = Decimal('0')
-                for buyer in buyers:
-                    if buyer.id in used_buyers:
-                        continue
-                    if total + buyer.amount <= seller.amount:
-                        match_buyers.append(buyer)
-                        total += buyer.amount
-                    if total == seller.amount:
-                        break
-
-                if total == seller.amount and match_buyers:
-                    with transaction.atomic():
-                        for buyer in match_buyers:
-                            buyer.status = 'merged'
-                            buyer.merged_bid = seller
-                            buyer.merged_at = now()
-                            buyer.save()
-                            used_buyers.add(buyer.id)
-                            logger.info(f"🔗 Sub-Merged Buyer #{buyer.id} into Seller #{seller.id}")
-
-                        seller.status = 'merged'
-                        seller.merged_bid = match_buyers[0]  # optional representative
-                        seller.merged_at = now()
-                        seller.save()
-                        used_sellers.add(seller.id)
-                        merged_count += len(match_buyers) + 1
-                        logger.info(f"🔗 Seller #{seller.id} fully merged with {len(match_buyers)} buyers")
 
         if merged_count:
             logger.success = getattr(logger, "success", logger.info)

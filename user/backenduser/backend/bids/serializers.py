@@ -19,13 +19,6 @@ class BidSerializer(serializers.ModelSerializer):
     class Meta:
         model = Bid
         fields = '__all__'
-        read_only_fields = [
-            'user', 'status', 'expected_return', 'merged_bid',
-            'merged_at', 'sender_confirmed', 'receiver_confirmed',
-            'can_recommit', 'counterparty_name', 'counterparty_phone',
-            'counterparty_account', 'counterparty_bank',
-            'role', 'counterparty_role','counterparty_account_name'
-        ]
 
     def get_counterparty(self):
         bid = self.get_counterparty_bid()
