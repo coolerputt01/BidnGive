@@ -52,11 +52,11 @@ import SellerBidCard from '@/components/SellerBidCard.vue';
 
 const bids = ref([]);
 const auctionInfo = ref({ remaining_seconds: 0, market_status: '' });
-const interval = ref(null); // ✅ Fix: Declare interval
+const interval = ref(null);
 const token = localStorage.getItem('access_token');
 
 const filter = ref('All');
-const filterOptions = ['All', 'Pending', 'Merged', 'Paid', 'Expired'];
+const filterOptions = ['All', 'Pending', 'Active', 'Completed'];
 
 const fetchBids = async () => {
   try {
@@ -80,7 +80,10 @@ const fetchAuctionStatus = async () => {
 
 const filteredBids = computed(() => {
   if (filter.value === 'All') return bids.value;
-  return bids.value.filter(b => b.status.toLowerCase() === filter.value.toLowerCase());
+  if (filter.value === 'Pending') return bids.value.filter(b => b.status === 'pending');
+  if (filter.value === 'Active') return bids.value.filter(b => b.status === 'merged');
+  if (filter.value === 'Completed') return bids.value.filter(b => b.status === 'paid');
+  return bids.value;
 });
 
 const formatTime = (seconds) => {

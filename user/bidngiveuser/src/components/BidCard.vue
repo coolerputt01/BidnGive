@@ -45,26 +45,21 @@
         <span v-else>❌ Cancel</span>
       </button>
 
-      <button
-        v-if="bid.status === 'paid' && bid.receiver_confirmed"
-        class="btn recommit-btn"
-        @click="recommit"
-      >
-        🔁 Recommit
-      </button>
-      <button
-        v-if="bid.status === 'paid' && bid.receiver_confirmed"
-        class="btn withdraw-btn"
-        @click="withdraw"
-      >
-        💸 Withdraw
-      </button>
+      <!-- ✅ Show recommit + withdraw for paid or merged AND confirmed -->
+      <template v-if="canRecommitOrWithdraw">
+        <button class="btn recommit-btn" @click="recommit">
+          🔁 Recommit
+        </button>
+        <button class="btn withdraw-btn" @click="withdraw">
+          💸 Withdraw
+        </button>
+      </template>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import axios from 'axios'
 import { toast } from 'vue3-toastify'
 
@@ -97,6 +92,11 @@ const formatDate = (isoString) => {
 }
 
 const canCancel = props.bid.status === 'pending'
+
+// ✅ Condition to show recommit & withdraw
+const canRecommitOrWithdraw = computed(() =>
+  ['merged', 'paid'].includes(props.bid.status)
+)
 
 const cancelBid = async () => {
   loading.value = true
@@ -151,7 +151,6 @@ const withdraw = async () => {
   }
 }
 </script>
-
 <style scoped>
 .bid-card {
   background: #ffffff;
