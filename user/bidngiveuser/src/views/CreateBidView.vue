@@ -89,7 +89,8 @@ const submitBid = async () => {
   try {
     await axios.post('https://bidngive.onrender.com/api/bids/', {
       amount,
-      plan: '50_24'
+      plan: '50_24',
+      
     }, {
       headers: {
         Authorization: `Bearer ${token}`,

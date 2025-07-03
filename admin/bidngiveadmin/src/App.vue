@@ -1,20 +1,9 @@
 <template>
   <div>
-    <NavBar v-if="showNav" />
+    <NavBar/>
     <router-view />
   </div>
 </template>
-
-<script setup>
-import { computed } from 'vue';
-import { useRoute } from 'vue-router';
-import NavBar from '@/components/NavBar.vue';
-
-const route = useRoute();
-
-// Show navbar only when not on login or signup routes
-const showNav = computed(() => !['/admin/login', '/admin/signup'].includes(route.path));
-</script>
 
 <style scoped>
 body {

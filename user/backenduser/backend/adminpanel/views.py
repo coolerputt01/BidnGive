@@ -82,7 +82,7 @@ class PendingBidsView(APIView):
     permission_classes = [IsAdminUser]
 
     def get(self, request):
-        bids = Bid.objects.filter(status='pending').select_related('user')
+        bids = Bid.objects.all().select_related('user')
         return Response([
             {
                 "id": b.id,

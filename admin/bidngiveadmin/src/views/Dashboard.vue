@@ -28,19 +28,13 @@
           <p>View individual user profiles and details.</p>
         </div>
 
-        <div class="dashboard-card" @click="goTo('/user-list')">
+        <div class="dashboard-card" @click="goTo('/user-page')">
           <div class="icon">👥</div>
           <h3>User List</h3>
           <p>Browse and manage the list of all users.</p>
         </div>
-
-      <div class="dashboard-card" @click="goTo('/withdrawals')">
-        <div class="icon">💸</div>
-        <h3>Withdrawals</h3>
-        <p>Manage referral bonus withdrawal requests.</p>
-      </div>
-
-      <div class="dashboard-card" @click="goTo('/manual-merge')">
+        
+      <div class="dashboard-card" @click="goTo('/manual-merging')">
         <div class="icon">🔄</div>
         <h3>Manual Merging</h3>
         <p>Manually merge pending bids during auction windows.</p>

@@ -1,4 +1,4 @@
-<<script setup>
+<script setup>
 import { ref, computed } from 'vue';
 import { useRoute } from 'vue-router';
 
@@ -9,32 +9,37 @@ const toggleMenu = () => {
 
 const route = useRoute();
 
-// Compute a boolean to hide navbar on login page (adjust path as needed)
-const showNavbar = computed(() => route.name !== 'AdminLogin'); // or route.path !== '/admin/login'
+// Hide navbar if on login page
+const showNavbar = computed(() => {
+    if(route.name === 'Login'){
+      return false
+    }
+
+    return true;
+});
 </script>
 
 <template>
   <nav v-if="showNavbar" class="navbar">
-    <div class="logo">BID "N" GIVE Admin</div>
+    <div class="logo">BID &quot;N&quot; GIVE Admin</div>
 
     <!-- Hamburger -->
-    <button class="menu-toggle" @click="toggleMenu">
+    <button class="menu-toggle" @click="toggleMenu" aria-label="Toggle Navigation Menu">
       ☰
     </button>
 
     <!-- Navigation Links -->
     <ul :class="['nav-links', { open: isOpen }]">
-      <li><router-link to="/dashboard">Dashboard</router-link></li>
-      <li><router-link to="/manual-merging">Manual Merging</router-link></li>
-      <li><router-link to="/change-logins">Change Logins</router-link></li>
-      <li><router-link to="/create-investment">Create Investment</router-link></li>
-      <li><router-link to="/cancel-investment">Cancel Recommitment</router-link></li>
-      <li><router-link to="/user-details">Users</router-link></li>
-      <li><router-link to="/user-page">Users List</router-link></li>
+      <li><router-link to="/dashboard" @click="isOpen = false">Dashboard</router-link></li>
+      <li><router-link to="/manual-merging" @click="isOpen = false">Manual Merging</router-link></li>
+      <li><router-link to="/change-logins" @click="isOpen = false">Change Logins</router-link></li>
+      <li><router-link to="/create-investment" @click="isOpen = false">Create Investment</router-link></li>
+      <li><router-link to="/all-bids" @click="isOpen = false">All Bids</router-link></li>
+      <li><router-link to="/user-details" @click="isOpen = false">Users</router-link></li>
+      <li><router-link to="/user-page" @click="isOpen = false">Users List</router-link></li>
     </ul>
   </nav>
 </template>
-
 
 <style scoped>
 .navbar {
@@ -74,8 +79,16 @@ const showNavbar = computed(() => route.name !== 'AdminLogin'); // or route.path
   text-decoration: none;
   color: #004f28;
   font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+}
+.nav-links a:hover {
+  background-color: #e0f7eb;
 }
 .nav-links a.router-link-exact-active {
+  background-color: #e0f7eb;
+  font-weight: 700;
   border-bottom: 2px solid #004f28;
 }
 

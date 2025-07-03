@@ -9,13 +9,23 @@ from decimal import Decimal
 logger = logging.getLogger(__name__)
 
 class Command(BaseCommand):
-    help = 'Merge sellers (withdrawal) with buyers (investment) based on amount.'
+    help = 'Merge sellers (withdrawal) with buyers (investment) based on amount, for users in auction room.'
 
     def handle(self, *args, **options):
         logger.info("🔄 Starting merge process...")
 
-        buyers = Bid.objects.filter(status='pending', type='investment').order_by('-amount')
-        sellers = Bid.objects.filter(status='pending', type='withdrawal').order_by('amount')
+        # Only consider bids whose users are in the auction room
+        buyers = Bid.objects.filter(
+            status='pending',
+            type='investment',
+            user__in_auction_room=True
+        ).order_by('-amount')
+
+        sellers = Bid.objects.filter(
+            status='pending',
+            type='withdrawal',
+            user__in_auction_room=True
+        ).order_by('amount')
 
         used_buyers = set()
         used_sellers = set()
