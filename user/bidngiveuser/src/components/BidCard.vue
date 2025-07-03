@@ -10,6 +10,10 @@
 
     <div class="bid-body">
       <div class="info">
+        <strong>📆 Created:</strong>
+        <span>{{ formatDate(bid.created_at) }}</span>
+      </div>
+      <div class="info">
         <strong>Expected Return:</strong>
         <span>₦{{ bid.expected_return.toLocaleString() }}</span>
       </div>
@@ -22,7 +26,6 @@
         <span class="capitalize">{{ bid.status }}</span>
       </div>
 
-      <!-- ❗ Not verified notice -->
       <div
         v-if="bid.status === 'paid' && !bid.receiver_confirmed"
         class="not-verified"
@@ -32,7 +35,6 @@
     </div>
 
     <div class="bid-actions">
-      <!-- Cancel button only for pending bids -->
       <button
         v-if="canCancel"
         class="btn cancel-btn"
@@ -80,6 +82,19 @@ const formatStatus = (status) => ({
   expired: '⌛ Expired',
   cancelled: '❌ Cancelled'
 })[status] || status
+
+const formatDate = (isoString) => {
+  if (!isoString) return 'N/A'
+  const date = new Date(isoString)
+  return date.toLocaleString('en-GB', {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).replace(',', ' •')
+}
 
 const canCancel = props.bid.status === 'pending'
 
@@ -241,7 +256,6 @@ const withdraw = async () => {
 .withdraw-btn:hover {
   background-color: #b91c1c;
 }
-
 .not-verified {
   margin-top: 12px;
   padding: 10px;
