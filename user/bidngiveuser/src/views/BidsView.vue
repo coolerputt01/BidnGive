@@ -31,7 +31,6 @@
     <!-- Bid List -->
     <div class="bid-list" v-if="filteredBids.length">
       <div class="bid-card" v-for="bid in filteredBids" :key="bid.id">
-        <SellerBidCard :bid="bid" @action="fetchBids" />
         <BidCard v-if="bid.type === 'investment'" :bid="bid" @action="fetchBids" />
         <SellerBidCard v-else :bid="bid" @action="fetchBids" />
       </div>
