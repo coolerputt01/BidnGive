@@ -21,6 +21,7 @@ from django.utils.timezone import localtime, make_aware, now as dj_now
 class AuctionStatusView(APIView):
     def get(self, request):
         now = localtime(dj_now())
+        print(now)
         today = now.date()
 
         morning_time = time(8, 0)
