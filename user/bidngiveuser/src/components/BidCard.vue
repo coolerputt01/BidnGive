@@ -9,27 +9,12 @@
     </div>
 
     <div class="bid-body">
-      <div class="info">
-        <strong>📆 Created:</strong>
-        <span>{{ formatDate(bid.created_at) }}</span>
-      </div>
-      <div class="info">
-        <strong>Expected Return:</strong>
-        <span>₦{{ bid.expected_return.toLocaleString() }}</span>
-      </div>
-      <div class="info">
-        <strong>Type:</strong>
-        <span class="capitalize">{{ bid.type }}</span>
-      </div>
-      <div class="info">
-        <strong>Status:</strong>
-        <span class="capitalize">{{ bid.status }}</span>
-      </div>
+      <div class="info"><strong>📆 Created:</strong><span>{{ formatDate(bid.created_at) }}</span></div>
+      <div class="info"><strong>Expected Return:</strong><span>₦{{ bid.expected_return.toLocaleString() }}</span></div>
+      <div class="info"><strong>Type:</strong><span class="capitalize">{{ bid.type }}</span></div>
+      <div class="info"><strong>Status:</strong><span class="capitalize">{{ bid.status }}</span></div>
 
-      <div
-        v-if="bid.status === 'paid' && !bid.receiver_confirmed"
-        class="not-verified"
-      >
+      <div v-if="bid.status === 'paid' && !bid.receiver_confirmed" class="not-verified">
         ❗ Payment not verified by receiver yet.
       </div>
     </div>
@@ -45,15 +30,25 @@
         <span v-else>❌ Cancel</span>
       </button>
 
-      <!-- ✅ Show recommit + withdraw for paid or merged AND confirmed -->
-      <template v-if="canRecommitOrWithdraw">
-        <button class="btn recommit-btn" @click="recommit">
-          🔁 Recommit
-        </button>
-        <button class="btn withdraw-btn" @click="withdraw">
-          💸 Withdraw
-        </button>
-      </template>
+      <button
+        v-if="showRecommit"
+        class="btn recommit-btn"
+        :disabled="!bid.receiver_confirmed"
+        :title="!bid.receiver_confirmed ? 'Waiting for receiver confirmation' : 'Recommit your investment'"
+        @click="recommit"
+      >
+        🔁 Recommit
+      </button>
+
+      <button
+        v-if="showWithdraw"
+        class="btn withdraw-btn"
+        :disabled="!canActuallyWithdraw"
+        :title="!canActuallyWithdraw ? 'Receiver has not confirmed or time not reached' : 'Withdraw now'"
+        @click="withdraw"
+      >
+        💸 Withdraw
+      </button>
     </div>
   </div>
 </template>
@@ -66,7 +61,6 @@ import { toast } from 'vue3-toastify'
 const props = defineProps({ bid: Object })
 const emit = defineEmits(['action'])
 const token = localStorage.getItem('access_token')
-
 const loading = ref(false)
 
 const formatStatus = (status) => ({
@@ -93,9 +87,32 @@ const formatDate = (isoString) => {
 
 const canCancel = props.bid.status === 'pending'
 
-// ✅ Condition to show recommit & withdraw
-const canRecommitOrWithdraw = computed(() =>
+// Plan duration
+const planHours = computed(() => {
+  const parts = props.bid.plan?.split('_')
+  return parts && parts.length === 2 ? parseInt(parts[1]) : 24
+})
+
+// Hours since created
+const bidAgeHours = computed(() => {
+  const created = new Date(props.bid.created_at)
+  const now = new Date()
+  return (now - created) / (1000 * 60 * 60)
+})
+
+// Show recommit button once investment is active
+const showRecommit = computed(() =>
   ['merged', 'paid'].includes(props.bid.status)
+)
+
+// Show withdraw only after time is due
+const showWithdraw = computed(() =>
+  ['paid', 'completed'].includes(props.bid.status) &&
+  bidAgeHours.value >= planHours.value
+)
+
+const canActuallyWithdraw = computed(() =>
+  showWithdraw.value && props.bid.receiver_confirmed
 )
 
 const cancelBid = async () => {
@@ -106,7 +123,7 @@ const cancelBid = async () => {
     })
     toast.success('Bid cancelled successfully.')
     emit('action')
-  } catch (err) {
+  } catch {
     toast.error('Failed to cancel bid.')
   } finally {
     loading.value = false
@@ -114,6 +131,7 @@ const cancelBid = async () => {
 }
 
 const recommit = async () => {
+  if (!props.bid.receiver_confirmed) return
   try {
     await axios.post(
       `https://bidngive.onrender.com/api/bids/`,
@@ -134,6 +152,7 @@ const recommit = async () => {
 }
 
 const withdraw = async () => {
+  if (!canActuallyWithdraw.value) return
   try {
     await axios.post(
       `https://bidngive.onrender.com/api/bids/withdraw/`,
@@ -151,6 +170,7 @@ const withdraw = async () => {
   }
 }
 </script>
+
 <style scoped>
 .bid-card {
   background: #ffffff;
@@ -188,37 +208,21 @@ const withdraw = async () => {
   color: white;
   text-transform: uppercase;
 }
-.status.pending {
-  background-color: #ffc107;
-  color: #000;
-}
-.status.merged {
-  background-color: #2196f3;
-}
-.status.paid {
-  background-color: #4caf50;
-}
-.status.completed {
-  background-color: #2e7d32;
-}
-.status.expired {
-  background-color: #9e9e9e;
-}
-.status.cancelled {
-  background-color: #d32f2f;
-}
-.bid-body {
-  margin-top: 20px;
-}
+.status.pending { background-color: #ffc107; color: #000; }
+.status.merged { background-color: #2196f3; }
+.status.paid { background-color: #4caf50; }
+.status.completed { background-color: #2e7d32; }
+.status.expired { background-color: #9e9e9e; }
+.status.cancelled { background-color: #d32f2f; }
+.bid-body { margin-top: 20px; }
 .info {
   display: flex;
   justify-content: space-between;
   padding: 8px 0;
   font-size: 0.95rem;
 }
-.capitalize {
-  text-transform: capitalize;
-}
+.capitalize { text-transform: capitalize; }
+
 .bid-actions {
   display: flex;
   justify-content: center;
@@ -233,6 +237,11 @@ const withdraw = async () => {
   cursor: pointer;
   transition: background-color 0.3s ease;
   font-size: 0.95rem;
+}
+.btn:disabled {
+  background-color: #ccc !important;
+  color: #777 !important;
+  cursor: not-allowed;
 }
 .cancel-btn {
   background-color: #d32f2f;

@@ -2,52 +2,87 @@
   <main class="manual-merge-container">
     <h1>🔄 Manual Merge Bids</h1>
     <p class="subtitle">
-      Select exactly <strong>two pending bids</strong> to merge them manually.
+      Select <strong>1 withdrawal bid (seller)</strong> and matching <strong>investment bids (buyers)</strong>.
     </p>
 
     <div v-if="loading" class="loader">Loading bids…</div>
 
     <div v-else>
-      <table class="bids-table" v-if="bids.length">
+      <!-- Withdrawal Seller Section -->
+      <h3 class="section-title">🔴 Seller Withdrawal Investment</h3>
+      <table class="bids-table">
         <thead>
           <tr>
             <th>Select</th>
             <th>User</th>
-            <th>Amount (₦)</th>
-            <th>Plan</th>
-            <th>Created At</th>
-            <th>Status</th>
+            <th>Amount</th>
+            <th>Created</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="bid in bids" :key="bid.id">
+          <tr
+            v-for="bid in withdrawalBids"
+            :key="bid.id"
+          >
             <td>
               <input
                 type="checkbox"
-                :value="bid.id"
-                v-model="selectedBidIds"
-                :disabled="isCheckboxDisabled(bid.id)"
-                :aria-label="`Select bid ${bid.id}`"
+                :value="bid"
+                v-model="selectedBids"
+                :disabled="isChecked(bid) ? false : selectedWithdrawal.length === 1"
               />
             </td>
             <td>{{ bid.username }}</td>
             <td>{{ formatAmount(bid.amount) }}</td>
-            <td>{{ bid.plan }}</td>
             <td>{{ formatDate(bid.created) }}</td>
-            <td><span class="status pending">Pending</span></td>
           </tr>
         </tbody>
       </table>
 
-      <div v-else class="empty-message">
-        No pending bids found.
+      <!-- Buyers Section -->
+      <h3 class="section-title">🟢 Buyer Investment Bids</h3>
+      <table class="bids-table">
+        <thead>
+          <tr>
+            <th>Select</th>
+            <th>User</th>
+            <th>Amount</th>
+            <th>Created</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            v-for="bid in investmentBids"
+            :key="bid.id"
+          >
+            <td>
+              <input
+                type="checkbox"
+                :value="bid"
+                v-model="selectedBids"
+              />
+            </td>
+            <td>{{ bid.username }}</td>
+            <td>{{ formatAmount(bid.amount) }}</td>
+            <td>{{ formatDate(bid.created) }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Matching Info -->
+      <div class="merge-check">
+        <p><strong>Buyer Total:</strong> ₦{{ totalInvestment.toLocaleString() }}</p>
+        <p><strong>Seller Amount:</strong> ₦{{ totalWithdrawal.toLocaleString() }}</p>
+        <p><strong>Ready to Merge:</strong>
+          <span :class="canMerge ? 'ready' : 'not-ready'">{{ canMerge ? '✅ Yes' : '❌ No' }}</span>
+        </p>
       </div>
 
+      <!-- Merge Button -->
       <button
         class="merge-button"
-        :disabled="selectedBidIds.length !== 2 || merging"
+        :disabled="!canMerge || merging"
         @click="handleMerge"
-        aria-live="polite"
       >
         <span v-if="merging">Merging...</span>
         <span v-else>Merge Selected Bids</span>
@@ -57,12 +92,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 import { toast } from 'vue3-toastify'
 
 const bids = ref([])
-const selectedBidIds = ref([])
+const selectedBids = ref([])
 const loading = ref(true)
 const merging = ref(false)
 
@@ -74,145 +109,149 @@ const fetchPendingBids = async () => {
   try {
     const res = await axios.get('https://bidngive.onrender.com/api/admin/pending-bids/', { headers })
     bids.value = res.data
-  } catch (error) {
+    console.log(bids.value)
+  } catch {
     toast.error('Failed to load pending bids.')
   } finally {
     loading.value = false
   }
 }
 
-const handleMerge = async () => {
-  if (selectedBidIds.value.length !== 2) return
+const withdrawalBids = computed(() => bids.value.filter(b => b.type === 'withdrawal'))
+const investmentBids = computed(() => bids.value.filter(b => b.type === 'investment'))
 
+console.log(withdrawalBids)
+
+const selectedWithdrawal = computed(() => selectedBids.value.filter(b => b.type === 'withdrawal'))
+const selectedInvestment = computed(() => selectedBids.value.filter(b => b.type === 'investment'))
+
+const totalInvestment = computed(() => selectedInvestment.value.reduce((sum, b) => sum + parseFloat(b.amount), 0))
+const totalWithdrawal = computed(() => selectedWithdrawal.value.reduce((sum, b) => sum + parseFloat(b.amount), 0))
+
+const canMerge = computed(() => {
+  return (
+    selectedWithdrawal.value.length === 1 &&
+    selectedInvestment.value.length > 0 &&
+    totalInvestment.value === totalWithdrawal.value
+  )
+})
+
+const handleMerge = async () => {
+  if (!canMerge.value) return
   merging.value = true
   try {
+    const bidIds = selectedBids.value.map(b => b.id)
     const res = await axios.post(
       'https://bidngive.onrender.com/api/merge/manual/',
-      { bid_ids: selectedBidIds.value },
+      { bid_ids: bidIds },
       { headers }
     )
-    toast.success(res.data.message || 'Bids merged successfully.')
-    selectedBidIds.value = []
+    toast.success(res.data.message || 'Merged successfully.')
+    selectedBids.value = []
     fetchPendingBids()
-  } catch (error) {
-    const msg = error.response?.data?.error || 'Failed to merge bids.'
-    toast.error(msg)
+  } catch (err) {
+    toast.error(err.response?.data?.error || 'Merge failed.')
   } finally {
     merging.value = false
   }
 }
 
-const formatDate = (iso) => {
-  const d = new Date(iso)
-  return d.toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-}
-
-const formatAmount = (num) => {
-  return Number(num).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-}
-
-// Prevent checking more than 2 checkboxes
-const isCheckboxDisabled = (bidId) => {
-  return selectedBidIds.value.length === 2 && !selectedBidIds.value.includes(bidId)
-}
-
-onMounted(() => {
-  fetchPendingBids()
+const formatDate = (iso) => new Date(iso).toLocaleString('en-GB', {
+  day: '2-digit', month: 'short', year: 'numeric',
+  hour: '2-digit', minute: '2-digit'
 })
+
+const formatAmount = (num) =>
+  Number(num).toLocaleString('en-NG', {
+    minimumFractionDigits: 2, maximumFractionDigits: 2
+  })
+
+const isChecked = (bid) => selectedBids.value.some(b => b.id === bid.id)
+
+onMounted(fetchPendingBids)
 </script>
 
 <style scoped>
 .manual-merge-container {
-  max-width: 900px;
-  margin: 2rem auto 4rem;
-  padding: 1.5rem;
+  max-width: 960px;
+  margin: 2rem auto;
   background: white;
-  border-radius: 14px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  color: #222;
+  padding: 1.5rem;
+  border-radius: 16px;
+  box-shadow: 0 0 12px rgba(0,0,0,0.05);
+  font-family: 'Segoe UI', sans-serif;
 }
 
 h1 {
-  font-weight: 700;
   font-size: 1.8rem;
   color: #17a35e;
   margin-bottom: 0.25rem;
-  user-select: none;
 }
-
 .subtitle {
-  margin-bottom: 1.5rem;
-  font-size: 1rem;
+  margin-bottom: 1.2rem;
   color: #555;
 }
 
-.loader {
-  text-align: center;
+.section-title {
+  margin-top: 1.5rem;
+  margin-bottom: 0.8rem;
   font-size: 1.1rem;
-  color: #888;
-  margin: 2rem 0;
+  font-weight: bold;
+  color: #222;
 }
 
 .bids-table {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 1.8rem;
+  margin-bottom: 1.5rem;
 }
-
 .bids-table th,
 .bids-table td {
-  padding: 12px 16px;
+  padding: 10px 14px;
   border-bottom: 1px solid #eee;
   text-align: left;
-  vertical-align: middle;
 }
-
 .bids-table th {
-  background-color: #f0f8f5;
-  color: #17a35e;
-  font-weight: 700;
-  user-select: none;
+  background: #f6fef9;
+  color: #0a7046;
 }
-
 .bids-table tbody tr:hover {
-  background-color: #f7fdf8;
+  background-color: #f9fffc;
 }
 
-.status.pending {
-  background-color: #fff4ce;
-  color: #856404;
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-weight: 600;
-  font-size: 0.85rem;
-  user-select: none;
-  display: inline-block;
+.merge-check {
+  text-align: center;
+  margin: 1rem 0;
+  font-size: 1rem;
+}
+
+.ready {
+  color: green;
+  font-weight: bold;
+}
+.not-ready {
+  color: red;
+  font-weight: bold;
 }
 
 .merge-button {
   display: block;
-  width: 100%;
-  max-width: 300px;
   margin: 0 auto;
-  padding: 14px 24px;
+  margin-top: 12px;
+  padding: 12px 28px;
   background-color: #17a35e;
+  color: white;
   border: none;
   border-radius: 28px;
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: white;
+  font-weight: bold;
+  font-size: 1rem;
   cursor: pointer;
-  user-select: none;
-  transition: background-color 0.3s ease;
 }
-
 .merge-button:disabled {
   background-color: #a2d5a0;
   cursor: not-allowed;
 }
-
 .merge-button:not(:disabled):hover {
-  background-color: #129045;
+  background-color: #128f4a;
 }
 </style>

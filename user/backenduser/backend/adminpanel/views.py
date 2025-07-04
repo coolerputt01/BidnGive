@@ -90,7 +90,8 @@ class PendingBidsView(APIView):
                 "amount": b.amount,
                 "plan": b.plan,
                 "created": b.created_at,
-                "status":b.status
+                "status":b.status,
+                "type":b.type
             } for b in bids
         ])
 

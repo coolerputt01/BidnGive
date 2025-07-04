@@ -36,7 +36,7 @@
           <td>₦{{ bid.amount.toLocaleString() }}</td>
           <td>{{ bid.plan }}</td>
           <td><span class="status" :class="bid.status">{{ bid.status }}</span></td>
-          <td>{{ formatDate(bid.created_at) }}</td>
+          <td>{{ formatDate(bid.created) }}</td>
           <td>{{ bid.merged_at ? formatDate(bid.merged_at) : '—' }}</td>
           <td>
             <button
@@ -69,6 +69,7 @@ const fetchBids = async () => {
   try {
     const res = await axios.get('https://bidngive.onrender.com/api/admin/pending-bids/', { headers })
     bids.value = res.data
+    console.log(bids.value)
   } catch (err) {
     toast.error('Failed to fetch bids')
   }
