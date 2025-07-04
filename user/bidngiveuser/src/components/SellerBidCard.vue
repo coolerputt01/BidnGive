@@ -13,6 +13,10 @@
       </div>
 
     </div>
+    <div v-if="bid.status === 'completed'" class="completed-msg">
+      ✅ This withdrawal has been completed.
+    </div>
+
 
     <div v-if="bid.status === 'merged' && bid.counterparty_name" class="counterparty">
       <h4>👤 Buyer Details</h4>
@@ -71,6 +75,7 @@ const formatStatus = (status) =>
     merged: '💸 Awaiting Payment',
     paid: '💳 Paid by Buyer',
     confirmed: '✅ Confirmed',
+    completed: '✅ Completed',
     expired: '⌛ Expired',
     cancelled: '❌ Cancelled'
   }[status] || status?.toUpperCase() || 'UNKNOWN')
@@ -133,6 +138,16 @@ const confirmPayment = async () => {
   text-transform: uppercase;
   color: #fff;
 }
+.completed-msg {
+  margin-top: 16px;
+  padding: 12px;
+  background-color: #e6f4ea;
+  border-left: 4px solid #2e7d32;
+  color: #2e7d32;
+  font-weight: 500;
+  border-radius: 8px;
+}
+
 
 /* Default status color (if class is missing) */
 .status:not(.pending):not(.merged):not(.confirmed):not(.expired):not(.cancelled) {
@@ -149,6 +164,9 @@ const confirmPayment = async () => {
 }
 .status.confirmed {
   background-color: #4caf50;
+}
+.status.completed {
+  background-color: #2e7d32; /* Darker green */
 }
 .status.expired {
   background-color: #9e9e9e;

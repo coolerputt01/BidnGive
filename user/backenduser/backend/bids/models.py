@@ -18,6 +18,7 @@ class Bid(models.Model):
         ('merged', 'Merged'),
         ('paid', 'Paid'),
         ('confirmed', 'Confirmed'),
+        ('completed', 'Completed'),
         ('cancelled', 'Cancelled'),
         ('expired', 'Expired'),
     ]

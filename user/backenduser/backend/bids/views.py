@@ -2,6 +2,7 @@ from rest_framework import viewsets, status, generics
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
+from django.utils import timezone
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser
 from rest_framework.exceptions import ValidationError
@@ -68,11 +69,14 @@ class ConfirmReceiverView(APIView):
         # ✅ Award referral bonus only once on first paid investment
         if bid.type == 'investment':
             bid.status = 'paid'
+            bid.paid_at = timezone.now()
             bid.save()
             award_referral_bonus(bid)
 
         # ✅ If withdrawal, credit the user's wallet
         if bid.type == 'withdrawal':
+            bid.status = 'paid'
+            bid.paid_at = timezone.now()
             wallet, _ = Wallet.objects.get_or_create(user=bid.user)
             wallet.balance += bid.amount
             wallet.save()
@@ -143,3 +147,12 @@ def auto_block(request):
         return Response({'error': 'Unauthorized'}, status=403)
     call_command('auto_block_expired')
     return Response({'status': 'Expired bids auto-block executed.'})
+
+@api_view(['GET'])
+@permission_classes([AllowAny])  # Optional: protect with admin if needed
+def complete_paid_bids(request):
+    if request.GET.get('key') != 'completekey':
+        return Response({'error': 'Unauthorized'}, status=403)
+
+    call_command('complete_paid_bids')
+    return Response({'status': 'Completed paid bids marked successfully'})

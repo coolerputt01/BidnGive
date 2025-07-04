@@ -13,6 +13,9 @@
       <div class="info"><strong>Expected Return:</strong><span>₦{{ bid.expected_return.toLocaleString() }}</span></div>
       <div class="info"><strong>Type:</strong><span class="capitalize">{{ bid.type }}</span></div>
       <div class="info"><strong>Status:</strong><span class="capitalize">{{ bid.status }}</span></div>
+      <div v-if="bid.status === 'completed'" class="completed-msg">
+        ✅ This investment is completed.
+      </div>
 
       <div v-if="bid.status === 'paid' && !bid.receiver_confirmed" class="not-verified">
         ❗ Payment not verified by receiver yet.
@@ -65,7 +68,7 @@ const loading = ref(false)
 
 const formatStatus = (status) => ({
   pending: '🕒 Pending',
-  merged: '🔗 Merged',
+  merged: '🔗 Active',
   paid: '💳 Paid',
   completed: '✅ Completed',
   expired: '⌛ Expired',
@@ -195,6 +198,18 @@ const withdraw = async () => {
   color: #0c69c8;
   margin: 0;
 }
+.completed-msg {
+  margin-top: 10px;
+  padding: 8px;
+  background-color: #e6f4ea;
+  border: 1px solid #a5d6a7;
+  color: #2e7d32;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
 .plan {
   color: #888;
   font-size: 0.9rem;

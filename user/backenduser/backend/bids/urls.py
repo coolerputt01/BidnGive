@@ -1,5 +1,6 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
+from . import views
 from .views import (
     BidViewSet,
     UploadProofView,
@@ -19,6 +20,8 @@ urlpatterns = [
 
     # Confirm receiver has received payment
     path('confirm-receive/<int:bid_id>/', ConfirmReceiverView.as_view(), name='confirm-receive'),
+
+    path('complete-paid-bids/', views.complete_paid_bids, name='complete-paid-bids'),
 
     # Withdraw to wallet (P2P)
     path('withdraw/', WithdrawBidView.as_view(), name='withdraw-bid'),
