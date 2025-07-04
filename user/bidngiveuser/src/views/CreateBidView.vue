@@ -90,7 +90,10 @@ const submitBid = async () => {
     await axios.post('https://bidngive.onrender.com/api/bids/', {
       amount,
       plan: '50_24',
-      
+      type: 'investment',
+      expected_return: amount + (amount/2),
+      user: currentUserId.value
+
     }, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -101,8 +104,9 @@ const submitBid = async () => {
     form.value.amount = '';
     router.push('/bid');
   } catch (err) {
-    toast.error('❌ Failed to create bid.');
-  } finally {
+  console.error('Backend error:', err.response?.data || err.message);
+  toast.error('❌ Failed to create bid.');
+} finally {
     loadingSubmit.value = false;
   }
 };
