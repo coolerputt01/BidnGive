@@ -260,13 +260,20 @@ onUnmounted(() => {
 
           <div style="margin-top: 12px; text-align: center;">
             <button
-              v-if="marketStatus === 'open'"
-              :disabled="joiningAuction || !canJoinAuction "
-              @click="joinAuctionRoom"
-              style="width: 60vw; padding: 10px; background-color: #fff; font-weight: 600; border-radius: 50px; border: none; cursor: pointer;"
-            >
-              {{ joiningAuction ? 'Joining...' : canJoinAuction ? 'Join Auction Room' : '⏳ Time Up!' }}
-            </button>
+  v-if="marketStatus === 'open'"
+  :disabled="joiningAuction || !canJoinAuction || isAuctionRoom"
+  @click="joinAuctionRoom"
+  style="width: 60vw; padding: 10px; background-color: #fff; font-weight: 600; border-radius: 50px; border: none; cursor: pointer;"
+>
+  {{ joiningAuction
+    ? 'Joining...'
+    : isAuctionRoom
+      ? 'Already Joined'
+      : canJoinAuction
+        ? 'Join Auction Room'
+        : '⏳ Time Up!' }}
+</button>
+
 
             <p v-else-if="isAuctionRoom && marketStatus === 'open'" style="color: #e0ffe0; font-size: 0.95em; margin-top: 10px;">
               ✅ You are in the Auction Room
