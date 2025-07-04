@@ -56,6 +56,14 @@
         <h3>Change User Login</h3>
         <p>Reset or update a user's login password.</p>
       </div>
+
+      <!-- Add this inside the <section class="dashboard-grid"> with the other cards -->
+      <div class="dashboard-card" @click="goTo('/create-withdrawal')">
+        <div class="icon">📤</div>
+        <h3>Create Withdrawal</h3>
+        <p>Submit a withdrawal bid for a user (waits for auction).</p>
+      </div>
+
     </section>
   </main>
 </template>

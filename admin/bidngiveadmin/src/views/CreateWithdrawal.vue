@@ -11,7 +11,7 @@ const loading = ref(false)
 const token = localStorage.getItem('access_token')
 const headers = { Authorization: `Bearer ${token}` }
 
-const createInvestment = async () => {
+const createWithdrawal = async () => {
   if (!email.value || !amount.value || !plan.value) {
     toast.error('Please fill in all fields')
     return
@@ -31,18 +31,18 @@ const createInvestment = async () => {
         email: email.value,
         amount: amt,
         plan: plan.value,
-        type: 'investment',
+        type: 'withdrawal',
         expected_return: Math.round(amt * 1.5),
-        status: "paid"
+        status: "pending"
       },
       { headers }
     )
-    toast.success(res.data.message || '✅ Investment created successfully')
+    toast.success(res.data.message || '✅ Withdrawal bid created (pending auction)')
     email.value = ''
     amount.value = ''
     plan.value = '50_24'
   } catch (err) {
-    toast.error(err.response?.data?.error || '❌ Failed to create investment')
+    toast.error(err.response?.data?.error || '❌ Failed to create withdrawal bid')
   } finally {
     loading.value = false
   }
@@ -51,8 +51,8 @@ const createInvestment = async () => {
 
 <template>
   <main class="investment-container">
-    <h2>💰 Create Active Investment for User</h2>
-    <form @submit.prevent="createInvestment" class="investment-form">
+    <h2>📤 Create Withdrawal Bid for User</h2>
+    <form @submit.prevent="createWithdrawal" class="investment-form">
       <label>
         User Email:
         <input type="email" v-model="email" required />
@@ -71,7 +71,7 @@ const createInvestment = async () => {
       </label>
 
       <button :disabled="loading">
-        {{ loading ? 'Creating...' : 'Create Investment' }}
+        {{ loading ? 'Creating...' : 'Create Withdrawal' }}
       </button>
     </form>
   </main>
@@ -106,7 +106,7 @@ select {
 }
 button {
   padding: 12px;
-  background: #04724d;
+  background: #95190C;
   color: #fff;
   border: none;
   border-radius: 10px;
@@ -114,6 +114,6 @@ button {
   cursor: pointer;
 }
 button:hover {
-  background-color: #03563a;
+  background-color: #701408;
 }
 </style>

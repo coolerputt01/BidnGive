@@ -35,6 +35,7 @@ const showNavbar = computed(() => {
       <li><router-link to="/change-logins" @click="isOpen = false">Change Logins</router-link></li>
       <li><router-link to="/create-investment" @click="isOpen = false">Create Investment</router-link></li>
       <li><router-link to="/all-bids" @click="isOpen = false">All Bids</router-link></li>
+      <li><router-link to="/create-withdrawal" @click="isOpen = false">Create Withdrawal</router-link></li>
       <li><router-link to="/user-details" @click="isOpen = false">Users</router-link></li>
       <li><router-link to="/user-page" @click="isOpen = false">Users List</router-link></li>
     </ul>

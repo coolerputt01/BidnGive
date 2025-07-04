@@ -219,7 +219,7 @@ onUnmounted(() => {
           <h2 style="font-size: 1.2em; font-weight: 600;">Hello, {{ username }}!</h2>
           <p style="font-size: 0.9em;">Welcome back</p>
         </div>
-        <img src="/icons/notification-on.svg" alt="Notifications Icon" style="width: 1.8em; height: 1.8em;">
+        <img src="/icons/refer.png" alt="Notifications Icon" style="width: 1.8em; height: 1.8em;mix-blend-mode:multiply;cursor: pointer;" @click="router.push('/referrals')">
       </div>
 
       <section style="display: flex; flex-direction: column; align-items: center;">
@@ -303,7 +303,7 @@ onUnmounted(() => {
           </div>
           <!-- WhatsApp Support Button -->
           <a
-            href="https://wa.me/2349012345678"  <!-- Replace with your WhatsApp number -->
+            href="https://char.whatsapp.com/FYJIaAqY3tw9OTuASmMjBB?mode=r_t" 
             target="_blank"
             class="whatsapp-support"
             aria-label="Chat on WhatsApp"
@@ -327,7 +327,6 @@ onUnmounted(() => {
   bottom: 20px;
   right: 16px;
   z-index: 9999;
-  background-color: #25d366;
   padding: 10px;
   border-radius: 50%;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);

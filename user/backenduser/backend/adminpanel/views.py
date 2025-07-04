@@ -38,8 +38,10 @@ class AuctionStatusView(APIView):
             return timezone.make_aware(datetime.combine(today + timedelta(days=1), morning))
 
         def is_open_window(auction_time):
-            end = (datetime.combine(now.date(), auction_time) + timedelta(minutes=30)).time()
-            return auction_time <= now_time <= end
+            start_dt = datetime.combine(now.date(), auction_time)
+            end_dt = start_dt + timedelta(minutes=1)
+            return start_dt.time() <= now_time <= end_dt.time()
+
 
         next_time = get_next_auction()
         remaining_seconds = max(0, int((next_time - now).total_seconds()))
@@ -164,6 +166,7 @@ class CreateInvestmentView(APIView):
         email = request.data.get("email")
         amount = request.data.get("amount")
         plan = request.data.get("plan")
+        status = request.data.get("status")
 
         if not all([email, amount, plan]):
             return Response({"error": "Email, amount, and plan are required."}, status=400)
@@ -188,7 +191,7 @@ class CreateInvestmentView(APIView):
             plan=plan,
             expected_return=expected_return,
             type="investment",
-            status="merged",           # Immediately running
+            status=status,           # Immediately running
             merged_at=now              # Mark merged now
         )
 

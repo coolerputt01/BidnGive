@@ -77,6 +77,13 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
+class ReferralDownlinesView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        downlines = User.objects.filter(referred_by=request.user)
+        return Response(UserSerializer(downlines, many=True).data)
+
 class VerifyEmailOTPView(APIView):
     def post(self, request):
         email = request.data.get("email", "").strip().lower()

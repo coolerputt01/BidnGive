@@ -7,6 +7,7 @@ import UserPage from '@/views/UserPage.vue'
 import ChangeLogins from '@/views/ChangeLogins.vue'
 import ManualMerging from '@/views/ManualMerging.vue'
 import AllBidsView from '@/views/AllBidsView.vue'
+import CreateWithdrawal from '@/views/CreateWithdrawal.vue'
 
 const routes = [
   { path: '/', name: 'Login', component: Login },
@@ -17,6 +18,7 @@ const routes = [
   { path: '/all-bids', name: 'allBids', component: AllBidsView },
   { path: '/user-details', name: 'UserManagement',component: UserManagement},
   { path: '/user-page', name: 'UserPage',component: UserPage},
+  { path: '/create-withdrawal', name:"CreateWithdrawal",component: CreateWithdrawal},
   {
       path: '/:pathMatch(.*)*',
       name: '404',

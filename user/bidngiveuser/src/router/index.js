@@ -63,6 +63,10 @@ const router = createRouter({
       path: '/create-bid',
       name: 'create-bid',
       component: () => import('@/views/CreateBidView.vue'),
+    },{
+      path: '/referrals',
+      name: 'referrals',
+      component: () => import('@/views/ReferralView.vue')
     }
   ]
 })
