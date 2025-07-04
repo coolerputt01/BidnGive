@@ -20,11 +20,11 @@ from django.utils.timezone import localtime, make_aware, now as dj_now
 
 class AuctionStatusView(APIView):
     def get(self, request):
-        now = dj_now()
+        now = localtime(dj_now())
         today = now.date()
 
         morning_time = time(8, 0)
-        evening_time = time(18, 50)
+        evening_time = time(19, 10)
         auction_duration = timedelta(minutes=3)
 
         morning_dt = localtime(make_aware(datetime.combine(today, morning_time)))
@@ -49,7 +49,7 @@ class AuctionStatusView(APIView):
 
         return Response({
             "market_status": market_status,
-            "next_auction": next_auction.strftime("%Y-%m-%d %H:%M:%S"),
+            "next_auction": next_auction.isoformat(),
             "remaining_seconds": remaining_seconds
         })
 
