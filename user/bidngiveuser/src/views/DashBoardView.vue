@@ -201,6 +201,7 @@ onMounted(async () => {
     }
 
     await fetchAuctionData();
+    console.log(nextAuctionTime)
   } finally {
     loading.value = false;
   }
@@ -235,7 +236,12 @@ onUnmounted(() => {
             </span>
           </div>
           <div style="color: #fff; display: flex; justify-content: space-between;">
-            <p>🕐 Next Auction: {{ new Date(nextAuctionTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }}</p>
+            <p>🕐 Next Auction: {{ new Date(nextAuctionTime).toLocaleTimeString('en-NG', {
+  timeZone: 'Africa/Lagos',
+  hour: '2-digit',
+  minute: '2-digit'
+}) }}
+</p>
             <p>{{ countdown }}</p>
           </div>
 
