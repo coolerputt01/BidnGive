@@ -17,41 +17,38 @@ from django.utils import timezone
 from .merge import merge_new_investment
 from django.contrib.auth.hashers import make_password
 
-class AuctionStatusView(APIView):
-    def get(self, request):
-        settings = MergeSettings.objects.last()
-        now = timezone.localtime()
-        now_time = now.time()
+from datetime import datetime, timedelta, time
+from django.utils import timezone
 
-        morning = settings.morning_time if settings else time(7, 0)
-        evening = settings.evening_time if settings else time(17, 05)
+def get_next_auction():
+    now = timezone.now()
+    today = now.date()
 
-        def get_next_auction():
-            today = now.date()
-            morning_dt = timezone.make_aware(datetime.combine(today, morning))
-            evening_dt = timezone.make_aware(datetime.combine(today, evening))
+    # Hardcoded auction times
+    morning_time = time(8, 0)
+    evening_time = time(18, 30)
 
-            if now_time < morning:
-                return morning_dt
-            elif now_time < evening:
-                return evening_dt
-            return timezone.make_aware(datetime.combine(today + timedelta(days=1), morning))
+    # Auction duration: 3 minutes
+    auction_duration = timedelta(minutes=3)
 
-        def is_open_window(auction_time):
-            start_dt = datetime.combine(now.date(), auction_time)
-            end_dt = start_dt + timedelta(minutes=1)
-            return start_dt.time() <= now_time <= end_dt.time()
+    # Create timezone-aware datetime objects
+    morning_dt = timezone.make_aware(datetime.combine(today, morning_time))
+    evening_dt = timezone.make_aware(datetime.combine(today, evening_time))
+
+    # Determine which auction is next or currently active
+    if now < morning_dt:
+        return morning_dt
+    elif morning_dt <= now < morning_dt + auction_duration:
+        return morning_dt
+    elif now < evening_dt:
+        return evening_dt
+    elif evening_dt <= now < evening_dt + auction_duration:
+        return evening_dt
+    else:
+        # Past today's auctions — return tomorrow's morning auction
+        return timezone.make_aware(datetime.combine(today + timedelta(days=1), morning_time))
 
 
-        next_time = get_next_auction()
-        remaining_seconds = max(0, int((next_time - now).total_seconds()))
-        is_open = is_open_window(morning) or is_open_window(evening)
-
-        return Response({
-            "market_status": "open" if is_open else "closed",
-            "next_auction": next_time.strftime("%I:%M %p"),
-            "remaining_seconds": remaining_seconds
-        })
 
 class ChangeUserPasswordView(APIView):
     permission_classes = [IsAdminUser]
