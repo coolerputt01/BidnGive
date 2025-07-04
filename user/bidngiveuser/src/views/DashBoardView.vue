@@ -27,6 +27,9 @@ const bidsUrl = "https://bidngive.onrender.com/api/bids/";
 const auctionUrl = "https://bidngive.onrender.com/api/admin/auction/status/";
 const userUrl = "https://bidngive.onrender.com/api/accounts/me/";
 
+const hasClickedJoin = ref(false);
+
+
 let intervalId = null;
 
 function copyCode() {
@@ -105,13 +108,19 @@ async function joinAuctionRoom() {
     toast.info("You've already joined the auction room.");
     return;
   }
+  if (marketStatus.value === 'closed') {
+    hasClickedJoin.value = false;
+  }
+
 
   joiningAuction.value = true;
+  hasClickedJoin.value = true;
   try {
     await axios.patch(userUrl, { is_auction_room: true }, { headers });
     isAuctionRoom.value = true;
     toast.success("✅ You have successfully joined the auction room.");
   } catch (err) {
+    hasClickedJoin.value = false;
     console.error("Failed to join auction room", err);
     toast.error("Failed to join auction room.");
   } finally {
@@ -261,7 +270,7 @@ onUnmounted(() => {
           <div style="margin-top: 12px; text-align: center;">
             <button
   v-if="marketStatus === 'open'"
-  :disabled="joiningAuction || !canJoinAuction || isAuctionRoom"
+  :disabled="joiningAuction || !canJoinAuction || hasClickedJoin"
   @click="joinAuctionRoom"
   style="width: 60vw; padding: 10px; background-color: #fff; font-weight: 600; border-radius: 50px; border: none; cursor: pointer;"
 >
