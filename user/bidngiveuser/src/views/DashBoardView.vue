@@ -235,7 +235,7 @@ onUnmounted(() => {
             </span>
           </div>
           <div style="color: #fff; display: flex; justify-content: space-between;">
-            <p>🕐 Next Auction: {{ nextAuctionTime }}</p>
+            <p>🕐 Next Auction: {{ new Date(nextAuctionTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }}</p>
             <p>{{ countdown }}</p>
           </div>
 

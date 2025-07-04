@@ -16,22 +16,20 @@ from .models import MergeSettings
 from django.utils import timezone
 from .merge import merge_new_investment
 from django.contrib.auth.hashers import make_password
+from django.utils.timezone import localtime, make_aware, now as dj_now
 
 class AuctionStatusView(APIView):
     def get(self, request):
-        now = timezone.now()
+        now = dj_now()
         today = now.date()
 
-        # Auction times and duration
         morning_time = time(8, 0)
         evening_time = time(18, 30)
         auction_duration = timedelta(minutes=3)
 
-        # Timezone-aware datetimes
-        morning_dt = timezone.make_aware(datetime.combine(today, morning_time))
-        evening_dt = timezone.make_aware(datetime.combine(today, evening_time))
+        morning_dt = localtime(make_aware(datetime.combine(today, morning_time)))
+        evening_dt = localtime(make_aware(datetime.combine(today, evening_time)))
 
-        # Determine status
         if morning_dt <= now < morning_dt + auction_duration:
             market_status = "open"
             next_auction = morning_dt
@@ -45,8 +43,7 @@ class AuctionStatusView(APIView):
             elif now < evening_dt:
                 next_auction = evening_dt
             else:
-                # Past both times today, return tomorrow morning
-                next_auction = timezone.make_aware(datetime.combine(today + timedelta(days=1), morning_time))
+                next_auction = localtime(make_aware(datetime.combine(today + timedelta(days=1), morning_time)))
 
         remaining_seconds = int((next_auction - now).total_seconds())
 
