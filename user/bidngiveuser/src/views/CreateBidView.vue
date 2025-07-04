@@ -50,7 +50,12 @@ const fetchBids = async () => {
     const res = await axios.get('https://bidngive.onrender.com/api/bids/', {
       headers: { Authorization: `Bearer ${token}` }
     });
-    bids.value = res.data;
+    bids.value = res.data.filter(
+  b =>
+    b.status === 'pending' ||
+    (b.status === 'merged' || (b.status === 'paid' && !b.receiver_confirmed))
+);
+
   } catch (err) {
     console.error('Bids fetch failed', err);
   }
