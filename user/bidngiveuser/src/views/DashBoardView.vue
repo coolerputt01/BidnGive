@@ -66,7 +66,9 @@ async function fetchAuctionData() {
     const res = await axios.get(auctionUrl);
     const seconds = res.data.remaining_seconds;
     marketStatus.value = res.data.market_status;
-    nextAuctionTime.value = res.data.next_auction;
+    nextAuctionTime.value = new Date(Date.now() + seconds * 1000).toISOString(); // derive from now
+    startCountdown(seconds);
+
     clearInterval(intervalId);
     startCountdown(seconds);
   } catch (err) {
@@ -116,6 +118,22 @@ async function joinAuctionRoom() {
     joiningAuction.value = false;
   }
 }
+
+function formatAuctionTime(isoString) {
+  try {
+    const utcDate = new Date(isoString);
+    const options = {
+      timeZone: 'Africa/Lagos',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    };
+    return new Intl.DateTimeFormat('en-NG', options).format(utcDate);
+  } catch {
+    return 'Invalid time';
+  }
+}
+
 
 async function withdrawReferral() {
   if (withdrawingReferral.value) return;
@@ -236,12 +254,7 @@ onUnmounted(() => {
             </span>
           </div>
           <div style="color: #fff; display: flex; justify-content: space-between;">
-            <p>🕐 Next Auction: {{ new Date(nextAuctionTime).toLocaleTimeString('en-NG', {
-  timeZone: 'Africa/Lagos',
-  hour: '2-digit',
-  minute: '2-digit'
-}) }}
-</p>
+            <p>🕐 Next Auction: {{ formatAuctionTime(nextAuctionTime) }}</p>
             <p>{{ countdown }}</p>
           </div>
 
