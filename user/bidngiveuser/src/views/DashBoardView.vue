@@ -303,7 +303,7 @@ onUnmounted(() => {
           </div>
           <!-- WhatsApp Support Button -->
           <a
-            href="https://char.whatsapp.com/FYJIaAqY3tw9OTuASmMjBB?mode=r_t" 
+            href="https://chat.whatsapp.com/FYJIaAqY3tw9OTuASmMjBB?mode=r_t" 
             target="_blank"
             class="whatsapp-support"
             aria-label="Chat on WhatsApp"
@@ -324,7 +324,7 @@ onUnmounted(() => {
 <style>
 .whatsapp-support {
   position: fixed;
-  bottom: 20px;
+  bottom: 40px;
   right: 16px;
   z-index: 9999;
   padding: 10px;
