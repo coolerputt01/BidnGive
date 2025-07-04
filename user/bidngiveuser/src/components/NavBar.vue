@@ -76,8 +76,8 @@ const isActive = (path) => route.path === path
 }
 
 .nav-icon {
-  width: 1.1em;
-  height: 1.1em;
+  width: 1.2em;
+  height: 1.2em;
   transition: transform 0.2s ease;
 }
 

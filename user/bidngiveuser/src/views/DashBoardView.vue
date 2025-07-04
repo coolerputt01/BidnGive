@@ -324,7 +324,7 @@ onUnmounted(() => {
 <style>
 .whatsapp-support {
   position: fixed;
-  bottom: 40px;
+  bottom: 120px;
   right: 16px;
   z-index: 9999;
   padding: 10px;
