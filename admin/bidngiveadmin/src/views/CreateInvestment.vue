@@ -1,43 +1,53 @@
 <script setup>
-import { ref } from 'vue';
-import axios from 'axios';
-import { toast } from 'vue3-toastify';
+import { ref } from 'vue'
+import axios from 'axios'
+import { toast } from 'vue3-toastify'
 
-const email = ref('');
-const amount = ref('');
-const plan = ref('');
-const loading = ref(false);
+const email = ref('')
+const amount = ref('')
+const plan = ref('50_24')
+const type = ref('investment') // 🆕 default to "investment"
+const loading = ref(false)
 
-const token = localStorage.getItem("access_token");
-const headers = { Authorization: `Bearer ${token}` };
+const token = localStorage.getItem('access_token')
+const headers = { Authorization: `Bearer ${token}` }
 
 const createInvestment = async () => {
-  if (!email.value || !amount.value || !plan.value) {
-    toast.error("Please fill in all fields");
-    return;
+  if (!email.value || !amount.value || !plan.value || !type.value) {
+    toast.error('Please fill in all fields')
+    return
   }
 
-  loading.value = true;
+  const amt = parseFloat(amount.value)
+  if (isNaN(amt) || amt < 10000) {
+    toast.error('Amount must be at least ₦10,000')
+    return
+  }
+
+  loading.value = true
   try {
     const res = await axios.post(
       'https://bidngive.onrender.com/api/admin/create-investment/',
       {
         email: email.value,
-        amount: amount.value,
-        plan: plan.value
+        amount: amt,
+        plan: plan.value,
+        type: type.value,
+        expected_return: Math.round(amt * 1.5)
       },
       { headers }
-    );
-    toast.success(res.data.message);
-    email.value = '';
-    amount.value = '';
-    plan.value = '';
+    )
+    toast.success(res.data.message || '✅ Investment created')
+    email.value = ''
+    amount.value = ''
+    plan.value = '50_24'
+    type.value = 'investment'
   } catch (err) {
-    toast.error(err.response?.data?.error || 'Failed to create investment');
+    toast.error(err.response?.data?.error || '❌ Failed to create investment')
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 </script>
 
 <template>
@@ -46,22 +56,30 @@ const createInvestment = async () => {
     <form @submit.prevent="createInvestment" class="investment-form">
       <label>
         User Email:
-        <input type="email" v-model="email" required placeholder="user@example.com" />
+        <input type="email" v-model="email" required />
       </label>
+
       <label>
         Amount (₦):
-        <input type="number" v-model="amount" min="1" required placeholder="1000" />
+        <input type="number" v-model="amount" min="10000" required />
       </label>
+
       <label>
-        Plan Name:
-        <input
-          type="text"
-          v-model="plan"
-          required
-          placeholder="e.g., 50_24 (means 50% in 24 hours)"
-        />
+        Plan:
+        <select v-model="plan" required>
+          <option value="50_24">50% in 24 hours</option>
+        </select>
       </label>
-      <button :disabled="loading" type="submit">
+
+      <label>
+        Investment Type:
+        <select v-model="type" required>
+          <option value="investment">Normal Investment</option>
+          <option value="withdrawal">Withdrawal</option>
+        </select>
+      </label>
+
+      <button :disabled="loading">
         {{ loading ? 'Processing...' : 'Create Investment' }}
       </button>
     </form>
@@ -70,62 +88,41 @@ const createInvestment = async () => {
 
 <style scoped>
 .investment-container {
-  max-width: 480px;
+  max-width: 500px;
   margin: 40px auto;
   padding: 30px;
   background-color: #fff;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
-
 .investment-form {
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
-
 label {
   display: flex;
   flex-direction: column;
   font-weight: 600;
   color: #333;
-  font-size: 1rem;
 }
-
-input {
+input,
+select {
   padding: 10px;
   border: 1px solid #ccc;
   border-radius: 8px;
   margin-top: 6px;
-  font-size: 1rem;
-  outline-offset: 2px;
 }
-
-input:focus {
-  border-color: #17a35e;
-  outline: none;
-  box-shadow: 0 0 6px #17a35eaa;
-}
-
 button {
   padding: 12px;
   background: #04724d;
   color: #fff;
   border: none;
   border-radius: 10px;
-  font-weight: 700;
+  font-weight: bold;
   cursor: pointer;
-  font-size: 1.1rem;
-  transition: background-color 0.25s ease;
 }
-
-button:disabled {
-  background: #9bc7b7;
-  cursor: not-allowed;
-}
-
-button:hover:not(:disabled) {
+button:hover {
   background-color: #03563a;
 }
 </style>

@@ -301,14 +301,45 @@ onUnmounted(() => {
               Copy Link
             </button>
           </div>
+          <!-- WhatsApp Support Button -->
+          <a
+            href="https://wa.me/2349012345678"  <!-- Replace with your WhatsApp number -->
+            target="_blank"
+            class="whatsapp-support"
+            aria-label="Chat on WhatsApp"
+          >
+            <img src="/icons/whatsapp.svg" alt="WhatsApp Support" />
+          </a>
+
         </div>
       </section>
     </section>
   </main>
-
   <!-- Loading Screen -->
   <main v-else>
     <LoadingScreen message="Fetching your dashboard..." />
   </main>
 </template>
 
+<style>
+.whatsapp-support {
+  position: fixed;
+  bottom: 20px;
+  right: 16px;
+  z-index: 9999;
+  background-color: #25d366;
+  padding: 10px;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease;
+}
+
+.whatsapp-support:hover {
+  transform: scale(1.1);
+}
+
+.whatsapp-support img {
+  width: 32px;
+  height: 32px;
+}
+</style>
