@@ -32,36 +32,38 @@
         </p>
 
         <!-- RECEIVER INFO -->
-<div class="receiver-box">
-  <h4>{{ bid.role === 'buyer' ? 'Pay To' : 'From' }} Details</h4>
-
-  <p>
-    <strong>Phone:</strong>
-    <a :href="whatsappLink(bid.counterparty_phone)" target="_blank" class="whatsapp-link">
-      {{ bid.counterparty_phone }}
-      <img src="/icons/whatsapp.svg" alt="WhatsApp" class="wa-icon" />
-    </a>
-  </p>
-
-  <p v-if="bid.counterparty_account">
-    <strong>Bank:</strong> {{ bid.counterparty_bank }}
-  </p>
-  <p v-if="bid.counterparty_account">
-    <strong>Account No:</strong> {{ bid.counterparty_account }}
-  </p>
-  <p v-if="bid.counterparty_account_name">
-    <strong>Account No:</strong> {{ bid.counterparty_account_name }}
-  </p>
-</div>
-
+        <div class="receiver-box">
+          <h4>{{ bid.role === 'buyer' ? 'Pay To' : 'From' }} Details</h4>
+          <p>
+            <strong>Phone:</strong>
+            <a :href="whatsappLink(bid.counterparty_phone)" target="_blank" class="whatsapp-link">
+              {{ bid.counterparty_phone }}
+              <img src="/icons/whatsapp.svg" alt="WhatsApp" class="wa-icon" />
+            </a>
+          </p>
+          <p v-if="bid.counterparty_account">
+            <strong>Bank:</strong> {{ bid.counterparty_bank }}
+          </p>
+          <p v-if="bid.counterparty_account">
+            <strong>Account No:</strong> {{ bid.counterparty_account }}
+          </p>
+          <p v-if="bid.counterparty_account_name">
+            <strong>Account Name:</strong> {{ bid.counterparty_account_name }}
+          </p>
+        </div>
 
         <!-- BUYER: Upload Payment -->
         <div v-if="bid.role === 'buyer' && bid.status === 'merged'" class="upload-section">
           <label>Upload Payment Proof:</label>
           <input type="file" @change="e => handleFileChange(e, bid.id)" accept="image/*" />
+
           <div v-if="fileMap[bid.id]">
             <img :src="URL.createObjectURL(fileMap[bid.id])" class="preview" />
           </div>
+          <div v-else-if="bid.payment_proof">
+            <img :src="bid.payment_proof" class="preview" />
+          </div>
+
           <button class="btn" @click="() => uploadProof(bid.id)" :disabled="uploadingMap[bid.id]">
             {{ uploadingMap[bid.id] ? 'Uploading...' : 'Submit Payment Proof' }}
           </button>
@@ -77,10 +79,7 @@
           </p>
 
           <div v-if="bid.payment_proof && !bid.receiver_confirmed">
-            <div v-if="fileMap[bid.id]">
-              <img :src="filePreview(bid.id)" class="preview" />
-            </div>
-
+            <img :src="bid.payment_proof" class="preview" />
             <button class="btn confirm-btn" @click="() => confirmAsReceiver(bid.id)" :disabled="confirmingMap[bid.id]">
               {{ confirmingMap[bid.id] ? 'Confirming...' : 'Confirm Payment Received' }}
             </button>
@@ -131,12 +130,6 @@ const fetchBids = async () => {
 const handleFileChange = (e, bidId) => {
   fileMap.value[bidId] = e.target.files[0]
 }
-
-const filePreview = (bidId) => {
-  const file = fileMap.value[bidId]
-  return file ? URL.createObjectURL(file) : ''
-}
-
 
 const uploadProof = async (bidId) => {
   const file = fileMap.value[bidId]
@@ -235,7 +228,6 @@ const startCountdowns = () => {
     setInterval(updateTimer, 1000)
   })
 }
-
 
 onMounted(fetchBids)
 </script>

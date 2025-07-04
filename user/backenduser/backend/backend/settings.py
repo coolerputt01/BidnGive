@@ -70,7 +70,17 @@ INSTALLED_APPS = [
     'reactivation',
     'corsheaders',
     'rest_framework',
+    'cloudinary',
+    'cloudinary_storage',
 ]
+
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': 'dbgxxzbzm',
+    'API_KEY': '516623782652681',
+    'API_SECRET': 'rmkL9REgyttFq0FuM4nP19kgm1g',
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

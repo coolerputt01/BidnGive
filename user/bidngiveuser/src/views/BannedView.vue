@@ -13,7 +13,7 @@
         If this was a mistake, you can reach out immediately to resolve it.
       </p>
 
-      <a href="https://wa.me/2348000000000" class="contact-btn pulse">
+      <a href="https://char.whatsapp.com/FYJIaAqY3tw9OTuASmMjBB?mode=r_t" class="contact-btn pulse">
         📞 Contact Support via WhatsApp
       </a>
     </section>

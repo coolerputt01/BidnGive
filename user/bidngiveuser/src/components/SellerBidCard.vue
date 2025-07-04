@@ -86,20 +86,22 @@ const timeLeft = (mergedAt) => {
 const confirmPayment = async () => {
   try {
     await axios.post(
-      `https://bidngive.onrender.com/api/bids/confirm/`,
-      { bid_id: props.bid.id },
+      `https://bidngive.onrender.com/api/bids/confirm-receive/${props.bid.id}/`,
+      {},
       {
         headers: {
           Authorization: `Bearer ${token}`
         }
       }
     )
-    toast.success('Payment confirmed.')
+    toast.success('✅ Payment confirmed.')
     emit('action')
-  } catch {
-    toast.error('Confirmation failed.')
+  } catch (err) {
+    console.error(err)
+    toast.error(err.response?.data?.error || '❌ Confirmation failed.')
   }
 }
+
 </script>
 
 <style scoped>

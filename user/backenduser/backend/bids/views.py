@@ -1,22 +1,24 @@
-from rest_framework import viewsets, permissions, status, generics
+from rest_framework import viewsets, status, generics
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser
-from django.core.management import call_command
-from referral.utils import award_referral_bonus  # <-- import here
+from rest_framework.exceptions import ValidationError
 from decimal import Decimal
+from django.core.management import call_command
 
 from .models import Bid
 from .serializers import BidSerializer, PaymentProofSerializer, ConfirmPaymentSerializer
 from wallet.models import Wallet, WalletTransaction
+from referral.utils import award_referral_bonus  # Referral logic
 
-
+# ================================
+# Main ViewSet for User Bids
+# ================================
 class BidViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsAuthenticated]
     serializer_class = BidSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         return Bid.objects.filter(user=self.request.user)
@@ -33,16 +35,20 @@ class BidViewSet(viewsets.ModelViewSet):
 
         serializer.save(user=user, expected_return=expected_return)
 
-
+# ================================
+# Upload Proof of Payment (Image)
+# ================================
 class UploadProofView(generics.UpdateAPIView):
     serializer_class = PaymentProofSerializer
     permission_classes = [IsAuthenticated]
-    parser_classes = [MultiPartParser]
+    parser_classes = [MultiPartParser]  # Enables image uploads via multipart/form-data
 
     def get_queryset(self):
         return Bid.objects.filter(user=self.request.user, status='merged')
 
-
+# ================================
+# Receiver Confirms a Payment
+# ================================
 class ConfirmReceiverView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -58,16 +64,14 @@ class ConfirmReceiverView(APIView):
         serializer = ConfirmPaymentSerializer(instance=bid, data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        # After serializer.save()...
 
-        # If investment type, award referral bonus on first paid bid
+        # ✅ Award referral bonus only once on first paid investment
         if bid.type == 'investment':
             bid.status = 'paid'
             bid.save()
             award_referral_bonus(bid)
 
-
-        # Handle wallet logic for withdrawals
+        # ✅ If withdrawal, credit the user's wallet
         if bid.type == 'withdrawal':
             wallet, _ = Wallet.objects.get_or_create(user=bid.user)
             wallet.balance += bid.amount
@@ -83,7 +87,9 @@ class ConfirmReceiverView(APIView):
 
         return Response({"message": "Payment confirmed by receiver."})
 
-
+# ================================
+# Withdraw Referral Bonus (P2P)
+# ================================
 class WithdrawBidView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -116,7 +122,9 @@ class WithdrawBidView(APIView):
 
         return Response({'message': f'₦{amount} withdrawal bid created successfully.'})
 
-
+# ================================
+# Admin Endpoint: Auto Merge
+# ================================
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def run_auto_merge(request):
@@ -125,7 +133,9 @@ def run_auto_merge(request):
     call_command('auto_merge')
     return Response({'status': 'Auto merge completed.'})
 
-
+# ================================
+# Admin Endpoint: Auto Block Expired
+# ================================
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def auto_block(request):

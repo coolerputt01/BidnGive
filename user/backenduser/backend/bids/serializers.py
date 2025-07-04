@@ -115,7 +115,7 @@ class ConfirmPaymentSerializer(serializers.Serializer):
             raise serializers.ValidationError("You can't confirm your own payment.")
 
         if bid.status != 'paid':
-            raise serializers.ValidationError("Bid is not marked as paid.")
+            raise serializers.ValidationError("Bid is not marked as paid yet.")
 
         attrs['bid'] = bid
         return attrs
