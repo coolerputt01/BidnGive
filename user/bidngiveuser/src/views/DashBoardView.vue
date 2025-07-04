@@ -49,7 +49,7 @@ function startCountdown(initialSeconds) {
     }
 
     // Only allow joining in the first 60 seconds
-    canJoinAuction.value = remaining <= 60;
+    canJoinAuction.value = remaining <= 180;
 
     const hrs = Math.floor(remaining / 3600);
     const mins = Math.floor((remaining % 3600) / 60);
@@ -242,7 +242,7 @@ onUnmounted(() => {
           <div style="margin-top: 12px; text-align: center;">
             <button
               v-if="marketStatus === 'open'"
-              :disabled="joiningAuction || !canJoinAuction"
+              :disabled="joiningAuction || !canJoinAuction || hasMergedBid"
               @click="joinAuctionRoom"
               style="width: 60vw; padding: 10px; background-color: #fff; font-weight: 600; border-radius: 50px; border: none; cursor: pointer;"
             >
