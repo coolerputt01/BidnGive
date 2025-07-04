@@ -18,33 +18,43 @@ from .merge import merge_new_investment
 from django.contrib.auth.hashers import make_password
 
 class AuctionStatusView(APIView):
-    def get_next_auction():
+    def get(self, request):
         now = timezone.now()
         today = now.date()
 
-        # Hardcoded auction times
+        # Auction times and duration
         morning_time = time(8, 0)
         evening_time = time(18, 30)
-
-        # Auction duration: 3 minutes
         auction_duration = timedelta(minutes=3)
 
-        # Create timezone-aware datetime objects
+        # Timezone-aware datetimes
         morning_dt = timezone.make_aware(datetime.combine(today, morning_time))
         evening_dt = timezone.make_aware(datetime.combine(today, evening_time))
 
-        # Determine which auction is next or currently active
-        if now < morning_dt:
-            return morning_dt
-        elif morning_dt <= now < morning_dt + auction_duration:
-            return morning_dt
-        elif now < evening_dt:
-            return evening_dt
+        # Determine status
+        if morning_dt <= now < morning_dt + auction_duration:
+            market_status = "open"
+            next_auction = morning_dt
         elif evening_dt <= now < evening_dt + auction_duration:
-            return evening_dt
+            market_status = "open"
+            next_auction = evening_dt
         else:
-            # Past today's auctions — return tomorrow's morning auction
-            return timezone.make_aware(datetime.combine(today + timedelta(days=1), morning_time))
+            market_status = "closed"
+            if now < morning_dt:
+                next_auction = morning_dt
+            elif now < evening_dt:
+                next_auction = evening_dt
+            else:
+                # Past both times today, return tomorrow morning
+                next_auction = timezone.make_aware(datetime.combine(today + timedelta(days=1), morning_time))
+
+        remaining_seconds = int((next_auction - now).total_seconds())
+
+        return Response({
+            "market_status": market_status,
+            "next_auction": next_auction.strftime("%Y-%m-%d %H:%M:%S"),
+            "remaining_seconds": remaining_seconds
+        })
 
 
 class ChangeUserPasswordView(APIView):

@@ -40,6 +40,8 @@ class Bid(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     can_recommit = models.BooleanField(default=False)
 
+    paid_at = models.DateTimeField(null=True, blank=True)
+
     def is_expired(self):
         return self.status == 'merged' and self.merged_at and timezone.now() > self.merged_at + timezone.timedelta(hours=5)
 
