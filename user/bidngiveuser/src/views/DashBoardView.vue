@@ -51,9 +51,6 @@ function startCountdown(initialSeconds) {
       return;
     }
 
-    // Only allow joining in the first 60 seconds
-    canJoinAuction.value = remaining <= 180;
-
     const hrs = Math.floor(remaining / 3600);
     const mins = Math.floor((remaining % 3600) / 60);
     const secs = remaining % 60;
@@ -70,7 +67,11 @@ async function fetchAuctionData() {
     const seconds = res.data.remaining_seconds;
     marketStatus.value = res.data.market_status;
     nextAuctionTime.value = new Date(Date.now() + seconds * 1000).toISOString(); // derive from now
-    startCountdown(seconds);
+
+    canJoinAuction.value = res.data.market_status === 'open';
+    if (res.data.market_status === 'closed') {
+        hasClickedJoin.value = false;
+      }
 
     clearInterval(intervalId);
     startCountdown(seconds);
@@ -108,10 +109,6 @@ async function joinAuctionRoom() {
     toast.info("You've already joined the auction room.");
     return;
   }
-  if (marketStatus.value === 'closed') {
-    hasClickedJoin.value = false;
-  }
-
 
   joiningAuction.value = true;
   hasClickedJoin.value = true;
@@ -269,22 +266,23 @@ onUnmounted(() => {
 
           <div style="margin-top: 12px; text-align: center;">
             <button
-  v-if="marketStatus === 'open'"
-  :disabled="joiningAuction || !canJoinAuction || hasClickedJoin"
-  @click="joinAuctionRoom"
-  style="width: 60vw; padding: 10px; background-color: #fff; font-weight: 600; border-radius: 50px; border: none; cursor: pointer;"
->
-  {{ joiningAuction
-    ? 'Joining...'
-    : isAuctionRoom
-      ? 'Already Joined'
-      : canJoinAuction
-        ? 'Join Auction Room'
-        : '⏳ Time Up!' }}
-</button>
+    v-if="marketStatus === 'open'"
+    :disabled="joiningAuction || hasClickedJoin"
+    @click="joinAuctionRoom"
+    style="width: 60vw; padding: 10px; background-color: #fff; font-weight: 600; border-radius: 50px; border: none; cursor: pointer;"
+  >
+    {{
+      joiningAuction
+        ? 'Joining...'
+        : hasClickedJoin
+          ? 'Already Clicked'
+          : 'Join Auction Room'
+    }}
+  </button>
 
 
-            <p v-else-if="isAuctionRoom && marketStatus === 'open'" style="color: #e0ffe0; font-size: 0.95em; margin-top: 10px;">
+
+            <p v-else-if="marketStatus === 'open' && hasClickedJoin" style="color: #e0ffe0; font-size: 0.95em; margin-top: 10px;">
               ✅ You are in the Auction Room
             </p>
 

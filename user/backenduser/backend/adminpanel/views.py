@@ -25,7 +25,7 @@ class AuctionStatusView(APIView):
         today = now.date()
 
         morning_time = time(8, 0)
-        evening_time = time(19, 57)
+        evening_time = time(20, 25)
         auction_duration = timedelta(minutes=3)
 
         morning_dt = localtime(make_aware(datetime.combine(today, morning_time)))
