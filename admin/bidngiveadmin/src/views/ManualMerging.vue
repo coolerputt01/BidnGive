@@ -142,7 +142,7 @@ const handleMerge = async () => {
   try {
     const bidIds = selectedBids.value.map(b => b.id)
     const res = await axios.post(
-      'https://bidngive.onrender.com/api/merge/manual/',
+      'https://bidngive.onrender.com/api/admin/merge/manual/',
       { bid_ids: bidIds },
       { headers }
     )
