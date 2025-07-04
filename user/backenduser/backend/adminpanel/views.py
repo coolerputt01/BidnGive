@@ -167,6 +167,7 @@ class CreateInvestmentView(APIView):
         amount = request.data.get("amount")
         plan = request.data.get("plan")
         status = request.data.get("status")
+        type_of = request.data.get("type")
 
         if not all([email, amount, plan]):
             return Response({"error": "Email, amount, and plan are required."}, status=400)
@@ -190,7 +191,7 @@ class CreateInvestmentView(APIView):
             amount=amount,
             plan=plan,
             expected_return=expected_return,
-            type="investment",
+            type=type_of,
             status=status,           # Immediately running
             merged_at=now              # Mark merged now
         )
