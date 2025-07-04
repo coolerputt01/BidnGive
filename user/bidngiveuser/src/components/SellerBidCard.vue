@@ -8,7 +8,10 @@
     <div class="details">
       <div class="info"><strong>📆 Created:</strong> {{ formatDate(bid.created_at) }}</div>
       <div class="info"><strong>💰 Expected Payout:</strong> ₦{{ bid.expected_return.toLocaleString() }}</div>
-      <div class="info"><strong>⏳ Time Left:</strong> {{ timeLeft(bid.merged_at) }}</div>
+      <div class="info" v-if="bid.status === 'merged'">
+        <strong>⏳ Time Left:</strong> {{ timeLeft(bid.merged_at) }}
+      </div>
+
     </div>
 
     <div v-if="bid.status === 'merged' && bid.counterparty_name" class="counterparty">
