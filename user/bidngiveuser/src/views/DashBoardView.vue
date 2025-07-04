@@ -261,7 +261,7 @@ onUnmounted(() => {
           <div style="margin-top: 12px; text-align: center;">
             <button
               v-if="marketStatus === 'open'"
-              :disabled="joiningAuction || !canJoinAuction || hasMergedBid"
+              :disabled="joiningAuction || !canJoinAuction "
               @click="joinAuctionRoom"
               style="width: 60vw; padding: 10px; background-color: #fff; font-weight: 600; border-radius: 50px; border: none; cursor: pointer;"
             >
