@@ -121,7 +121,6 @@ async function joinAuctionRoom() {
 
     // 2. Mark a bid as 'awaiting'
     await axios.patch('https://bidngive.onrender.com/api/bids/mark-awaiting/', {}, { headers });
-    toast.success("🕐 One of your bids is now marked as 'awaiting'.");
 
   } catch (err) {
     hasClickedJoin.value = false;
