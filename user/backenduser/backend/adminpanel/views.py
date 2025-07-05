@@ -127,21 +127,37 @@ class ManualMergeView(APIView):
         if not bid_ids:
             return Response({"error": "No bid IDs provided."}, status=400)
 
-        bids = Bid.objects.filter(id__in=bid_ids, status='awaiting')
-        if not bids.exists():
-            return Response({"error": "No valid pending bids found."}, status=400)
+        bids = list(Bid.objects.filter(id__in=bid_ids, status='awaiting'))
+
+        if len(bids) < 2 or len(bids) % 2 != 0:
+            return Response({"error": "You must select an even number of bids to merge in pairs."}, status=400)
 
         now = timezone.now()
         merged_count = 0
 
-        for bid in bids:
-            bid.status = "merged"
-            bid.merged_at = now
-            bid.save()
-            merged_count += 1
+        # Merge in pairs
+        for i in range(0, len(bids), 2):
+            bid1 = bids[i]
+            bid2 = bids[i + 1]
+
+            # Decide roles: First one is buyer, second is seller
+            bid1.status = 'merged'
+            bid1.merged_at = now
+            bid1.bid_role = 'buyer'
+            bid1.type = 'investment'
+            bid1.merged_bid = bid2
+
+            bid2.status = 'merged'
+            bid2.merged_at = now
+            bid2.bid_role = 'seller'
+            bid2.type = 'withdrawal'
+            bid2.merged_bid = bid1
+
+            bid1.save()
+            bid2.save()
+            merged_count += 2
 
         return Response({"message": f"{merged_count} bid(s) merged manually."})
-
 
 class UpdateMergeSettingsView(APIView):
     permission_classes = [IsAdminUser]
@@ -219,27 +235,34 @@ class CreateInvestmentView(APIView):
             if not counterparty_bid:
                 return Response({"error": "No available bid found for counterparty user."}, status=400)
 
-        # Create the admin bid
+        # Create the admin-side bid
         bid = Bid.objects.create(
             user=user,
             amount=amount,
             plan=plan,
             expected_return=expected_return,
-            type=type_of,
+            type=type_of,  # initial type; will update if merged
             status='merged' if counterparty_bid else 'awaiting',
             merged_bid=counterparty_bid if counterparty_bid else None,
             merged_at=now if counterparty_bid else None,
             admin_paid=True,
-            bid_role='buyer' if counterparty_bid else 'buyer'  # Sending money
+            role=None  # will set later if merged
         )
 
-        # If a counterparty is found, link both bids together
+        # If a counterparty is found, finalize linking and roles
         if counterparty_bid:
+            # Update counterparty bid
             counterparty_bid.merged_bid = bid
             counterparty_bid.status = 'merged'
             counterparty_bid.merged_at = now
-            counterparty_bid.role = 'seller'  # Receiving money
+            counterparty_bid.role = 'seller'
+            counterparty_bid.type = 'withdrawal'
             counterparty_bid.save()
+
+            # Update admin-created bid
+            bid.role = 'buyer'
+            bid.type = 'investment'
+            bid.save()
 
         return Response({
             "message": f"Investment of ₦{amount} created for {user.username} and merged with counterparty." if counterparty_bid else f"Investment of ₦{amount} created and running.",
@@ -247,6 +270,7 @@ class CreateInvestmentView(APIView):
             "merged": bool(counterparty_bid),
             "counterparty_email": counterparty_email if counterparty_bid else None
         })
+
 
 
 class CancelInvestmentView(APIView):
