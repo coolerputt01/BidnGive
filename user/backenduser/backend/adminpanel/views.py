@@ -210,7 +210,12 @@ class CreateInvestmentView(APIView):
             except User.DoesNotExist:
                 return Response({"error": "Counterparty user not found."}, status=404)
 
-            counterparty_bid = Bid.objects.filter(user=counterparty_user).exclude(status='paid').first()
+            counterparty_bid = Bid.objects.filter(
+                user=counterparty_user,
+                status='awaiting',
+                merged_bid__isnull=True
+            ).first()
+
             if not counterparty_bid:
                 return Response({"error": "No available bid found for counterparty user."}, status=400)
 
@@ -224,7 +229,8 @@ class CreateInvestmentView(APIView):
             status='merged' if counterparty_bid else 'awaiting',
             merged_bid=counterparty_bid if counterparty_bid else None,
             merged_at=now if counterparty_bid else None,
-            admin_paid=True
+            admin_paid=True,
+            bid_role='buyer' if counterparty_bid else 'buyer'  # Sending money
         )
 
         # If a counterparty is found, link both bids together
@@ -232,6 +238,7 @@ class CreateInvestmentView(APIView):
             counterparty_bid.merged_bid = bid
             counterparty_bid.status = 'merged'
             counterparty_bid.merged_at = now
+            counterparty_bid.role = 'seller'  # Receiving money
             counterparty_bid.save()
 
         return Response({
