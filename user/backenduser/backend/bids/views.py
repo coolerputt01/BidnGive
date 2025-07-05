@@ -156,3 +156,15 @@ def complete_paid_bids(request):
 
     call_command('complete_paid_bids')
     return Response({'status': 'Completed paid bids marked successfully'})
+
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def mark_bid_awaiting(request):
+    bid = Bid.objects.filter(user=request.user, status='pending').first()
+    if not bid:
+        return Response({"message": "No valid pending bid found."}, status=404)
+
+    bid.status = 'awaiting'
+    bid.save()
+    return Response({"message": "Bid marked as awaiting."})

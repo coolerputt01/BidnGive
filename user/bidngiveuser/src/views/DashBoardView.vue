@@ -112,18 +112,26 @@ async function joinAuctionRoom() {
 
   joiningAuction.value = true;
   hasClickedJoin.value = true;
+
   try {
-    await axios.patch(userUrl, { is_auction_room: true }, { headers });
+    // 1. Join the auction room
+    const res = await axios.patch(userUrl, { is_auction_room: true }, { headers });
     isAuctionRoom.value = true;
     toast.success(res.data.message || 'Joined auction room!');
+
+    // 2. Mark a bid as 'awaiting'
+    await axios.patch('https://bidngive.onrender.com/api/bids/mark-awaiting/', {}, { headers });
+    toast.success("🕐 One of your bids is now marked as 'awaiting'.");
+
   } catch (err) {
     hasClickedJoin.value = false;
     console.error("Failed to join auction room", err);
-    toast.success(err.response?.data?.message || 'Failed to join auction room');
+    toast.error(err.response?.data?.message || 'Failed to join auction room');
   } finally {
     joiningAuction.value = false;
   }
 }
+
 
 function formatAuctionTime(isoString) {
   try {

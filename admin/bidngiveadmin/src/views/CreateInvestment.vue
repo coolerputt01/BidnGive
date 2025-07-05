@@ -33,7 +33,7 @@ const createInvestment = async () => {
         plan: plan.value,
         type: 'investment',
         expected_return: Math.round(amt * 1.5),
-        status: "paid",
+        status: "awaiting",
       },
       { headers }
     )
