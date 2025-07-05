@@ -10,11 +10,15 @@ class BidSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Bid
-        fields = '__all__' + ['payment_proof', 'counterparties', 'can_recommit', 'role']
+        fields = [
+            'id', 'user', 'amount', 'plan', 'expected_return', 'type', 'status',
+            'merged_bid', 'merged_at', 'payment_proof', 'sender_confirmed', 'receiver_confirmed',
+            'created_at', 'can_recommit', 'paid_at', 'admin_paid', 'counterparties', 'role'
+        ]
 
     def get_payment_proof(self, obj):
         if obj.payment_proof:
-            return f"https://res.cloudinary.com/dbgxxzbzm/image/upload/{obj.payment_proof}"
+            return obj.payment_proof.url  # Cloudinary auto-generates the full URL
         return None
 
     def get_role(self, obj):
@@ -25,11 +29,9 @@ class BidSerializer(serializers.ModelSerializer):
         return Bid.objects.filter(user=user, status='paid').exclude(id=obj.id).exists()
 
     def get_counterparties(self, obj):
-        # If I'm the receiver (the main/parent bid)
         if not obj.merged_bid:
             merged_bids = Bid.objects.filter(merged_bid=obj).exclude(id=obj.id)
         else:
-            # I'm a child; my counterparty is the parent
             merged_bids = [obj.merged_bid]
 
         result = []
@@ -61,7 +63,6 @@ class BidSerializer(serializers.ModelSerializer):
             plan=plan,
             expected_return=expected_return
         )
-
 
 
 
