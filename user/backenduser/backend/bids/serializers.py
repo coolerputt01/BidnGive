@@ -7,6 +7,7 @@ from .models import Bid
 from decimal import Decimal
 
 class BidSerializer(serializers.ModelSerializer):
+    payment_proof = serializers.SerializerMethodField()
     counterparty_name = serializers.SerializerMethodField()
     counterparty_phone = serializers.SerializerMethodField()
     counterparty_account = serializers.SerializerMethodField()
@@ -79,10 +80,17 @@ class BidSerializer(serializers.ModelSerializer):
             plan=plan,
             expected_return=expected_return
         )
+    def get_payment_proof(self, obj):
+        if obj.payment_proof:
+            return f"https://res.cloudinary.com/dbgxxzbzm/image/upload/{obj.payment_proof}"
+        return None
 
 
 
+# bids/serializers.py
 class PaymentProofSerializer(serializers.ModelSerializer):
+    payment_proof = serializers.ImageField(required=True)
+
     class Meta:
         model = Bid
         fields = ['id', 'payment_proof']
@@ -97,6 +105,7 @@ class PaymentProofSerializer(serializers.ModelSerializer):
         instance.status = 'paid'
         instance.save()
         return instance
+
 
 
 class ConfirmPaymentSerializer(serializers.Serializer):

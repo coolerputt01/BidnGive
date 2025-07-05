@@ -57,9 +57,10 @@
           <label>Upload Payment Proof:</label>
           <input type="file" @change="e => handleFileChange(e, bid.id)" accept="image/*" />
 
-          <div v-if="fileMap[bid.id]">
-            <img :src="URL.createObjectURL(fileMap[bid.id])" class="preview" />
+          <div v-if="previewUrl(bid.id)">
+            <img :src="previewUrl(bid.id)" class="preview" />
           </div>
+
           <div v-else-if="bid.payment_proof">
             <img :src="bid.payment_proof" class="preview" />
           </div>
@@ -115,12 +116,19 @@ const fileMap = ref({})
 const uploadingMap = ref({})
 const confirmingMap = ref({})
 
+const previewUrl = (bidId) => {
+  const file = fileMap.value[bidId]
+  return file ? URL.createObjectURL(file) : null
+}
+
+
 const fetchBids = async () => {
   try {
     const res = await axios.get(`https://bidngive.onrender.com/api/bids/`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     bids.value = res.data.filter(b => b.status === 'merged' || b.status === 'paid')
+    console.log(bids.value)
     startCountdowns()
   } catch {
     toast.error('Failed to load bids')

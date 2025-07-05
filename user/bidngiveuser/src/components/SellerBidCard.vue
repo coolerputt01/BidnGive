@@ -35,7 +35,12 @@
     <div v-if="bid.status === 'merged'" class="payment-proof">
       <h4>📎 Payment Proof</h4>
       <div v-if="bid.payment_proof">
-        <img :src="bid.payment_proof" alt="Proof" class="proof-img" />
+        <img
+          :src="formatProofUrl(bid.payment_proof)"
+          alt="Proof"
+          class="proof-img"
+        />
+
       </div>
       <div v-else>
         <p>No payment proof uploaded yet.</p>
@@ -49,6 +54,15 @@
 import { defineProps, defineEmits } from 'vue'
 import axios from 'axios'
 import { toast } from 'vue3-toastify'
+
+const CLOUDINARY_BASE = 'https://res.cloudinary.com/dbgxxzbzm/image/upload/'
+
+const formatProofUrl = (path) => {
+  if (!path) return null
+  if (path.startsWith('http')) return path
+  return CLOUDINARY_BASE + path
+}
+
 
 const props = defineProps({
   bid: {

@@ -119,8 +119,8 @@ const fetchPendingBids = async () => {
 
 const isEligible = (bid) => {
   return (
-    (bid.status === 'awaiting') ||
-    bid.admin_paid === true
+    bid.status === 'awaiting' ||
+    (bid.admin_paid === true && bid.status !== 'merged')
   )
 }
 

@@ -178,11 +178,11 @@ class CreateInvestmentView(APIView):
         email = request.data.get("email")
         amount = request.data.get("amount")
         plan = request.data.get("plan")
-        status = request.data.get("status")
         type_of = request.data.get("type")
+        counterparty_email = request.data.get("counterparty_email")
 
-        if not all([email, amount, plan]):
-            return Response({"error": "Email, amount, and plan are required."}, status=400)
+        if not all([email, amount, plan, type_of]):
+            return Response({"error": "Email, amount, plan, and type are required."}, status=400)
 
         try:
             user = User.objects.get(email=email)
@@ -194,28 +194,51 @@ class CreateInvestmentView(APIView):
         except (ValueError, IndexError):
             return Response({"error": "Invalid plan format."}, status=400)
 
-        expected_return = float(amount) + (float(amount) * percent / 100)
+        try:
+            amount = float(amount)
+        except ValueError:
+            return Response({"error": "Amount must be a number."}, status=400)
 
-        # Create investment bid and mark as merged immediately
+        expected_return = amount + (amount * percent / 100)
         now = timezone.now()
+
+        # Handle counterparty logic
+        counterparty_bid = None
+        if counterparty_email:
+            try:
+                counterparty_user = User.objects.get(email=counterparty_email)
+            except User.DoesNotExist:
+                return Response({"error": "Counterparty user not found."}, status=404)
+
+            counterparty_bid = Bid.objects.filter(user=counterparty_user).exclude(status='paid').first()
+            if not counterparty_bid:
+                return Response({"error": "No available bid found for counterparty user."}, status=400)
+
+        # Create the admin bid
         bid = Bid.objects.create(
             user=user,
             amount=amount,
             plan=plan,
             expected_return=expected_return,
             type=type_of,
-            status='awaiting',           # Immediately running
-            merged_at=now ,
+            status='merged' if counterparty_bid else 'awaiting',
+            merged_bid=counterparty_bid if counterparty_bid else None,
+            merged_at=now if counterparty_bid else None,
             admin_paid=True
         )
 
-        # You can trigger any post-merge logic here if necessary
-        # For example: merge_new_investment(bid) - but probably not needed
+        # If a counterparty is found, link both bids together
+        if counterparty_bid:
+            counterparty_bid.merged_bid = bid
+            counterparty_bid.status = 'merged'
+            counterparty_bid.merged_at = now
+            counterparty_bid.save()
 
         return Response({
-            "message": f"Investment of ₦{amount} created and running immediately for {user.username}.",
+            "message": f"Investment of ₦{amount} created for {user.username} and merged with counterparty." if counterparty_bid else f"Investment of ₦{amount} created and running.",
             "bid_id": bid.id,
-            "merged": True
+            "merged": bool(counterparty_bid),
+            "counterparty_email": counterparty_email if counterparty_bid else None
         })
 
 

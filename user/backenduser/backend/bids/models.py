@@ -2,6 +2,7 @@ from django.db import models
 from django.conf import settings
 from django.utils import timezone
 from decimal import Decimal
+from cloudinary.models import CloudinaryField
 
 class Bid(models.Model):
     PLAN_CHOICES = [
@@ -34,7 +35,7 @@ class Bid(models.Model):
     merged_bid = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='merged_bids')
     merged_at = models.DateTimeField(null=True, blank=True)
 
-    payment_proof = models.ImageField(upload_to='proofs/', null=True, blank=True)
+    payment_proof = CloudinaryField('payment_proof', blank=True, null=True)
     sender_confirmed = models.BooleanField(default=False)
     receiver_confirmed = models.BooleanField(default=False)
 
