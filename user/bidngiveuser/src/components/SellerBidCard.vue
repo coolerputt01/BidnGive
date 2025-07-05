@@ -18,35 +18,33 @@
     </div>
 
 
-    <div v-if="bid.status === 'merged' && bid.counterparty_name" class="counterparty">
-      <h4>👤 Buyer Details</h4>
-      <p><strong>Name:</strong> {{ bid.counterparty_name }}</p>
-      <p>
-        <strong>Phone:</strong>
-        <a :href="`https://wa.me/${bid.counterparty_phone}`" target="_blank" rel="noopener noreferrer">
-          {{ bid.counterparty_phone }}
-        </a>
-      </p>
-      <p><strong>Bank:</strong> {{ bid.counterparty_bank || 'N/A' }}</p>
-      <p><strong>Account Number:</strong> {{ bid.counterparty_account || 'N/A' }}</p>
-      <p><strong>Account Name:</strong> {{ bid.counterparty_account_name || 'N/A' }}</p>
-    </div>
+    <div v-if="bid.status === 'merged' && bid.counterparties?.length" class="counterparty">
+  <h4>👥 Counterparty Details</h4>
+  <div v-for="(cp, index) in bid.counterparties" :key="index" class="counterparty-entry">
+    <p><strong>Name:</strong> {{ cp.username }}</p>
+    <p>
+      <strong>Phone:</strong>
+      <a :href="`https://wa.me/${cp.phone_number}`" target="_blank" rel="noopener noreferrer">
+        {{ cp.phone_number }}
+      </a>
+    </p>
+    <p><strong>Bank:</strong> {{ cp.bank_name || 'N/A' }}</p>
+    <p><strong>Account Number:</strong> {{ cp.account_number || 'N/A' }}</p>
+    <p><strong>Account Name:</strong> {{ cp.account_name || 'N/A' }}</p>
+    <p><strong>Role:</strong> {{ cp.role }}</p>
+    <hr v-if="index !== bid.counterparties.length - 1" />
+  </div>
+</div>
 
-    <div v-if="bid.status === 'merged'" class="payment-proof">
-      <h4>📎 Payment Proof</h4>
-      <div v-if="bid.payment_proof">
-        <img
-          :src="formatProofUrl(bid.payment_proof)"
-          alt="Proof"
-          class="proof-img"
-        />
 
-      </div>
-      <div v-else>
-        <p>No payment proof uploaded yet.</p>
-      </div>
+    <div v-if="bid.payment_proof">
+      <img :src="formatProofUrl(bid.payment_proof)" alt="Proof" class="proof-img" />
       <button @click="confirmPayment" class="confirm-btn">✅ Confirm Payment</button>
     </div>
+    <div v-else>
+      <p>No payment proof uploaded yet.</p>
+    </div>
+
   </div>
 </template>
 
@@ -160,6 +158,13 @@ const confirmPayment = async () => {
   color: #2e7d32;
   font-weight: 500;
   border-radius: 8px;
+}
+
+.counterparty-entry {
+  margin-bottom: 12px;
+  padding: 10px;
+  background-color: #f5f5f5;
+  border-radius: 6px;
 }
 
 

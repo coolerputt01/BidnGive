@@ -52,23 +52,32 @@
           </p>
         </div>
 
-        <!-- BUYER: Upload Payment -->
-        <div v-if="bid.role === 'buyer' && bid.status === 'merged'" class="upload-section">
-          <label>Upload Payment Proof:</label>
-          <input type="file" @change="e => handleFileChange(e, bid.id)" accept="image/*" />
+        <h4>👥 {{ bid.role === 'buyer' ? 'Pay To' : 'From' }} ({{ bid.counterparties.length }})</h4>
+<div
+  v-for="(cp, index) in bid.counterparties"
+  :key="index"
+  class="receiver-box"
+>
+  <p>
+    <strong>Phone:</strong>
+    <a :href="whatsappLink(cp.phone_number)" target="_blank" class="whatsapp-link">
+      {{ cp.phone_number }}
+      <img src="/icons/whatsapp.svg" alt="WhatsApp" class="wa-icon" />
+    </a>
+  </p>
+  <p v-if="cp.account_number">
+    <strong>Bank:</strong> {{ cp.bank_name || 'N/A' }}
+  </p>
+  <p v-if="cp.account_number">
+    <strong>Account No:</strong> {{ cp.account_number }}
+  </p>
+  <p v-if="cp.account_name">
+    <strong>Account Name:</strong> {{ cp.account_name }}
+  </p>
+  <p><strong>Role:</strong> {{ cp.role }}</p>
+  <hr v-if="index !== bid.counterparties.length - 1" />
+</div>
 
-          <div v-if="previewUrl(bid.id)">
-            <img :src="previewUrl(bid.id)" class="preview" />
-          </div>
-
-          <div v-else-if="bid.payment_proof">
-            <img :src="bid.payment_proof" class="preview" />
-          </div>
-
-          <button class="btn" @click="() => uploadProof(bid.id)" :disabled="uploadingMap[bid.id]">
-            {{ uploadingMap[bid.id] ? 'Uploading...' : 'Submit Payment Proof' }}
-          </button>
-        </div>
 
         <!-- SELLER: Confirm Payment -->
         <div v-if="bid.role === 'seller'" class="confirm-section">
@@ -80,7 +89,7 @@
           </p>
 
           <div v-if="bid.payment_proof && !bid.receiver_confirmed">
-            <img :src="bid.payment_proof" class="preview" />
+            <img :src="getImageUrl(bid.payment_proof)" class="preview" />
             <button class="btn confirm-btn" @click="() => confirmAsReceiver(bid.id)" :disabled="confirmingMap[bid.id]">
               {{ confirmingMap[bid.id] ? 'Confirming...' : 'Confirm Payment Received' }}
             </button>
@@ -120,6 +129,12 @@ const previewUrl = (bidId) => {
   const file = fileMap.value[bidId]
   return file ? URL.createObjectURL(file) : null
 }
+const getImageUrl = (path) => {
+  const CLOUDINARY_BASE = 'https://res.cloudinary.com/dbgxxzbzm/image/upload/'
+  if (!path) return null
+  if (path.startsWith('http')) return path
+  return CLOUDINARY_BASE + path
+}
 
 
 const fetchBids = async () => {
@@ -127,7 +142,7 @@ const fetchBids = async () => {
     const res = await axios.get(`https://bidngive.onrender.com/api/bids/`, {
       headers: { Authorization: `Bearer ${token}` }
     })
-    bids.value = res.data.filter(b => b.status === 'merged' || b.status === 'paid')
+    bids.value = res.data.filter(b => b.status === 'merged' || (b.status === 'paid' && !b.receiver_confirmed))
     console.log(bids.value)
     startCountdowns()
   } catch {

@@ -2,67 +2,48 @@ from rest_framework import serializers
 from .models import Bid
 from decimal import Decimal
 
-from rest_framework import serializers
-from .models import Bid
-from decimal import Decimal
-
 class BidSerializer(serializers.ModelSerializer):
     payment_proof = serializers.SerializerMethodField()
-    counterparty_name = serializers.SerializerMethodField()
-    counterparty_phone = serializers.SerializerMethodField()
-    counterparty_account = serializers.SerializerMethodField()
-    counterparty_account_name = serializers.SerializerMethodField()
-    counterparty_bank = serializers.SerializerMethodField()
-    counterparty_role = serializers.SerializerMethodField()
+    counterparties = serializers.SerializerMethodField()
     can_recommit = serializers.SerializerMethodField()
     role = serializers.SerializerMethodField()
 
     class Meta:
         model = Bid
-        fields = '__all__'
+        fields = '__all__' + ['payment_proof', 'counterparties', 'can_recommit', 'role']
 
-    def get_counterparty(self):
-        bid = self.get_counterparty_bid()
-        return bid.user if bid else None
-
-    def get_counterparty_bid(self):
-        if self.merged_bid:
-            return self.merged_bid
-        return Bid.objects.filter(merged_bid=self).first()
-
-
-    def get_counterparty_name(self, obj):
-        counterparty = obj.get_counterparty()
-        return f"{counterparty.username}" if counterparty else None
-
-    def get_counterparty_phone(self, obj):
-        counterparty = obj.get_counterparty()
-        return counterparty.phone_number if counterparty else None
-
-    def get_counterparty_account(self, obj):
-        counterparty = obj.get_counterparty()
-        return counterparty.account_number if hasattr(counterparty, 'account_number') else None
-
-    def get_counterparty_bank(self, obj):
-        counterparty = obj.get_counterparty()
-        return counterparty.bank_name if hasattr(counterparty, 'bank_name') else None
-   
-    def get_counterparty_account_name(self, obj):
-        counterparty = obj.get_counterparty()
-        return counterparty.account_name if hasattr(counterparty,'account_name') else None
+    def get_payment_proof(self, obj):
+        if obj.payment_proof:
+            return f"https://res.cloudinary.com/dbgxxzbzm/image/upload/{obj.payment_proof}"
+        return None
 
     def get_role(self, obj):
         return 'seller' if obj.type == 'withdrawal' else 'buyer'
 
-    def get_counterparty_role(self, obj):
-        bid = obj.get_counterparty_bid()
-        if bid:
-            return 'seller' if bid.type == 'withdrawal' else 'buyer'
-        return None
-
     def get_can_recommit(self, obj):
         user = obj.user
         return Bid.objects.filter(user=user, status='paid').exclude(id=obj.id).exists()
+
+    def get_counterparties(self, obj):
+        # If I'm the receiver (the main/parent bid)
+        if not obj.merged_bid:
+            merged_bids = Bid.objects.filter(merged_bid=obj).exclude(id=obj.id)
+        else:
+            # I'm a child; my counterparty is the parent
+            merged_bids = [obj.merged_bid]
+
+        result = []
+        for bid in merged_bids:
+            user = bid.user
+            result.append({
+                "username": user.username,
+                "phone_number": user.phone_number,
+                "account_number": getattr(user, 'account_number', ''),
+                "account_name": getattr(user, 'account_name', ''),
+                "bank_name": getattr(user, 'bank_name', ''),
+                "role": 'seller' if bid.type == 'withdrawal' else 'buyer'
+            })
+        return result
 
     def create(self, validated_data):
         user = self.context['request'].user
@@ -80,10 +61,7 @@ class BidSerializer(serializers.ModelSerializer):
             plan=plan,
             expected_return=expected_return
         )
-    def get_payment_proof(self, obj):
-        if obj.payment_proof:
-            return f"https://res.cloudinary.com/dbgxxzbzm/image/upload/{obj.payment_proof}"
-        return None
+
 
 
 

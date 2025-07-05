@@ -14,6 +14,15 @@ from pathlib import Path
 from datetime import timedelta
 import os
 import dj_database_url
+import cloudinary
+
+cloudinary.config(
+    cloud_name=os.getenv('CLOUD_NAME'),
+    api_key=os.getenv('CLOUD_KEY'),
+    api_secret=os.getenv('CLOUD_SECRET'),
+    secure=True
+)
+
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
