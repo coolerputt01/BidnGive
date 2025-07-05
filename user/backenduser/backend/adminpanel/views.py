@@ -127,7 +127,7 @@ class ManualMergeView(APIView):
         if not bid_ids:
             return Response({"error": "No bid IDs provided."}, status=400)
 
-        bids = Bid.objects.filter(id__in=bid_ids, status='pending', user__in_auction_room=True)
+        bids = Bid.objects.filter(id__in=bid_ids, status='awaiting')
         if not bids.exists():
             return Response({"error": "No valid pending bids found."}, status=400)
 
@@ -204,7 +204,7 @@ class CreateInvestmentView(APIView):
             plan=plan,
             expected_return=expected_return,
             type=type_of,
-            status=status,           # Immediately running
+            status='awaiting',           # Immediately running
             merged_at=now ,
             admin_paid=True
         )
