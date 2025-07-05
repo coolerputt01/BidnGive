@@ -27,9 +27,9 @@ class AuctionStatusView(APIView):
         if not settings:
             return Response({"error": "Merge settings not found."}, status=404)
 
+        # Only morning and evening now
         times = [
             settings.morning_time,
-            settings.afternoon_time,
             settings.evening_time
         ]
         auction_duration = timedelta(minutes=settings.auction_duration_minutes)
@@ -47,7 +47,9 @@ class AuctionStatusView(APIView):
                 next_auction = auction_dt
 
         if not next_auction:
-            next_auction = localtime(make_aware(datetime.combine(today + timedelta(days=1), settings.morning_time)))
+            next_auction = localtime(make_aware(
+                datetime.combine(today + timedelta(days=1), settings.morning_time)
+            ))
 
         remaining_seconds = int((next_auction - now).total_seconds())
 
@@ -150,7 +152,6 @@ class UpdateMergeSettingsView(APIView):
             return Response({}, status=404)
         return Response({
             "morning_time": settings.morning_time.strftime('%H:%M'),
-            "afternoon_time": settings.afternoon_time.strftime('%H:%M'),
             "evening_time": settings.evening_time.strftime('%H:%M'),
             "auction_duration_minutes": settings.auction_duration_minutes
         })
@@ -160,15 +161,15 @@ class UpdateMergeSettingsView(APIView):
         if not settings:
             return Response({"error": "Merge settings not found."}, status=404)
 
-        for field in ['morning_time', 'afternoon_time', 'evening_time']:
-            if field in request.data:
-                setattr(settings, field, request.data[field])
-        if 'auction_duration_minutes' in request.data:
-            settings.auction_duration_minutes = int(request.data['auction_duration_minutes'])
+        if "morning_time" in request.data:
+            settings.morning_time = request.data["morning_time"]
+        if "evening_time" in request.data:
+            settings.evening_time = request.data["evening_time"]
+        if "auction_duration_minutes" in request.data:
+            settings.auction_duration_minutes = int(request.data["auction_duration_minutes"])
 
         settings.save()
         return Response({"message": "Merge settings updated."})
-
 
 class CreateInvestmentView(APIView):
     permission_classes = [IsAdminUser]

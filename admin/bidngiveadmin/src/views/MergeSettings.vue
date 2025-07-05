@@ -34,7 +34,6 @@ const headers = { Authorization: `Bearer ${token}` }
 
 const form = ref({
   morning_time: '',
-  afternoon_time: '',
   evening_time: '',
   auction_duration_minutes: 3
 })
