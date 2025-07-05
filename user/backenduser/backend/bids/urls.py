@@ -23,7 +23,7 @@ urlpatterns = [
     path('confirm-receive/<int:bid_id>/', ConfirmReceiverView.as_view(), name='confirm-receive'),
 
     path('complete-paid-bids/', views.complete_paid_bids, name='complete-paid-bids'),
-    path('bids/mark-awaiting/', mark_bid_awaiting),
+    path('mark-awaiting/', mark_bid_awaiting),
 
     # Withdraw to wallet (P2P)
     path('withdraw/', WithdrawBidView.as_view(), name='withdraw-bid'),
