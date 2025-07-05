@@ -17,7 +17,7 @@ Done!
 - Profile page - Done!
 - Backend
 - User Auth - Done!
-- CRUD requests - Done(mostly)!
-- Integration
-- Polishing
-- Hosting
+- CRUD requests - Done!
+- Integration - Done!
+- Polishing - Done!
+- Hosting - Done!
