@@ -16,6 +16,7 @@ class Bid(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('merged', 'Merged'),
+        ('awaiting','Awaiting'),
         ('paid', 'Paid'),
         ('confirmed', 'Confirmed'),
         ('completed', 'Completed'),
@@ -41,6 +42,7 @@ class Bid(models.Model):
     can_recommit = models.BooleanField(default=False)
 
     paid_at = models.DateTimeField(null=True, blank=True)
+    admin_paid = models.BooleanField(default=False, null= True)
 
     def is_expired(self):
         return self.status == 'merged' and self.merged_at and timezone.now() > self.merged_at + timezone.timedelta(hours=5)

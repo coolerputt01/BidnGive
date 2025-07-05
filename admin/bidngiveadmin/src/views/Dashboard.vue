@@ -57,6 +57,12 @@
         <p>Reset or update a user's login password.</p>
       </div>
 
+      <div class="dashboard-card" @click="goTo('/merge-settings')">
+        <div class="icon">⚙️</div>
+        <h3>Merged Settings</h3>
+        <p>Adjust auto-merge and auction timing configurations.</p>
+      </div>
+
       <!-- Add this inside the <section class="dashboard-grid"> with the other cards -->
       <div class="dashboard-card" @click="goTo('/create-withdrawal')">
         <div class="icon">📤</div>

@@ -21,35 +21,38 @@ from django.utils.timezone import localtime, make_aware, now as dj_now
 class AuctionStatusView(APIView):
     def get(self, request):
         now = localtime(dj_now())
-        print(now)
         today = now.date()
 
-        morning_time = time(8, 0)
-        evening_time = time(20, 25)
-        auction_duration = timedelta(minutes=3)
+        settings = MergeSettings.objects.last()
+        if not settings:
+            return Response({"error": "Merge settings not found."}, status=404)
 
-        morning_dt = localtime(make_aware(datetime.combine(today, morning_time)))
-        evening_dt = localtime(make_aware(datetime.combine(today, evening_time)))
+        times = [
+            settings.morning_time,
+            settings.afternoon_time,
+            settings.evening_time
+        ]
+        auction_duration = timedelta(minutes=settings.auction_duration_minutes)
 
-        if morning_dt <= now < morning_dt + auction_duration:
-            market_status = "open"
-            next_auction = morning_dt
-        elif evening_dt <= now < evening_dt + auction_duration:
-            market_status = "open"
-            next_auction = evening_dt
-        else:
-            market_status = "closed"
-            if now < morning_dt:
-                next_auction = morning_dt
-            elif now < evening_dt:
-                next_auction = evening_dt
-            else:
-                next_auction = localtime(make_aware(datetime.combine(today + timedelta(days=1), morning_time)))
+        status = "closed"
+        next_auction = None
+
+        for auction_time in sorted(times):
+            auction_dt = localtime(make_aware(datetime.combine(today, auction_time)))
+            if auction_dt <= now < auction_dt + auction_duration:
+                status = "open"
+                next_auction = auction_dt
+                break
+            if now < auction_dt and (not next_auction or auction_dt < next_auction):
+                next_auction = auction_dt
+
+        if not next_auction:
+            next_auction = localtime(make_aware(datetime.combine(today + timedelta(days=1), settings.morning_time)))
 
         remaining_seconds = int((next_auction - now).total_seconds())
 
         return Response({
-            "market_status": market_status,
+            "market_status": status,
             "next_auction": next_auction.isoformat(),
             "remaining_seconds": remaining_seconds
         })
@@ -95,7 +98,8 @@ class PendingBidsView(APIView):
                 "plan": b.plan,
                 "created": b.created_at,
                 "status":b.status,
-                "type":b.type
+                "type":b.type,
+                "admin_paid":b.admin_paid
             } for b in bids
         ])
 
@@ -142,9 +146,13 @@ class UpdateMergeSettingsView(APIView):
 
     def get(self, request):
         settings = MergeSettings.objects.last()
+        if not settings:
+            return Response({}, status=404)
         return Response({
-            "morning_time": settings.morning_time.strftime('%H:%M') if settings else None,
-            "evening_time": settings.evening_time.strftime('%H:%M') if settings else None,
+            "morning_time": settings.morning_time.strftime('%H:%M'),
+            "afternoon_time": settings.afternoon_time.strftime('%H:%M'),
+            "evening_time": settings.evening_time.strftime('%H:%M'),
+            "auction_duration_minutes": settings.auction_duration_minutes
         })
 
     def patch(self, request):
@@ -152,12 +160,13 @@ class UpdateMergeSettingsView(APIView):
         if not settings:
             return Response({"error": "Merge settings not found."}, status=404)
 
-        if "morning_time" in request.data:
-            settings.morning_time = request.data["morning_time"]
-        if "evening_time" in request.data:
-            settings.evening_time = request.data["evening_time"]
-        settings.save()
+        for field in ['morning_time', 'afternoon_time', 'evening_time']:
+            if field in request.data:
+                setattr(settings, field, request.data[field])
+        if 'auction_duration_minutes' in request.data:
+            settings.auction_duration_minutes = int(request.data['auction_duration_minutes'])
 
+        settings.save()
         return Response({"message": "Merge settings updated."})
 
 
@@ -195,7 +204,8 @@ class CreateInvestmentView(APIView):
             expected_return=expected_return,
             type=type_of,
             status=status,           # Immediately running
-            merged_at=now              # Mark merged now
+            merged_at=now ,
+            admin_paid=True
         )
 
         # You can trigger any post-merge logic here if necessary

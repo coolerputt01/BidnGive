@@ -24,10 +24,12 @@
           <th>User</th>
           <th>Amount</th>
           <th>Plan</th>
+          <th>Type</th>
           <th>Status</th>
           <th>Created At</th>
           <th>Merged At</th>
           <th>Action</th>
+          <th>Admin Paid</th>
         </tr>
       </thead>
       <tbody>
@@ -35,6 +37,7 @@
           <td>{{ bid.username }}</td>
           <td>₦{{ bid.amount.toLocaleString() }}</td>
           <td>{{ bid.plan }}</td>
+          <td>{{ bid.type || '—' }}</td>
           <td><span class="status" :class="bid.status">{{ bid.status }}</span></td>
           <td>{{ formatDate(bid.created) }}</td>
           <td>{{ bid.merged_at ? formatDate(bid.merged_at) : '—' }}</td>
@@ -46,6 +49,11 @@
             >
               Cancel
             </button>
+          </td>
+          <td>
+            <span :style="{ color: bid.admin_paid ? 'green' : 'red' }">
+    {{ bid.admin_paid ? '✅ Yes' : '❌ No' }}
+  </span>
           </td>
         </tr>
       </tbody>

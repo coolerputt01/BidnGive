@@ -128,13 +128,21 @@ def enter_auction_room(request):
 
     # Check if the user has pending bids
     has_pending = Bid.objects.filter(user=user, status='pending').exists()
-
     if not has_pending:
         return Response({"message": "You must have at least one pending bid to join the auction room."}, status=400)
+
+    # Reset all user's 'awaiting' bids to 'pending'
+    Bid.objects.filter(user=user, status='awaiting').update(status='pending')
+
+    # Set only one of their pending bids to 'awaiting'
+    bid_to_promote = Bid.objects.filter(user=user, status='pending').first()
+    if bid_to_promote:
+        bid_to_promote.status = 'awaiting'
+        bid_to_promote.save()
 
     # Update user status
     user.in_auction_room = True
     user.save()
 
-    return Response({"message": "You have entered the auction room."})
+    return Response({"message": "You have entered the auction room and one bid is now awaiting."})
 

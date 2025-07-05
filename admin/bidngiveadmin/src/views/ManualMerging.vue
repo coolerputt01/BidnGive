@@ -117,8 +117,20 @@ const fetchPendingBids = async () => {
   }
 }
 
-const withdrawalBids = computed(() => bids.value.filter(b => b.type === 'withdrawal'))
-const investmentBids = computed(() => bids.value.filter(b => b.type === 'investment'))
+const isEligible = (bid) => {
+  return (
+    (bid.status === 'awaiting') ||
+    bid.admin_paid === true
+  )
+}
+
+const withdrawalBids = computed(() =>
+  bids.value.filter(b => b.type === 'withdrawal' && isEligible(b))
+)
+
+const investmentBids = computed(() =>
+  bids.value.filter(b => b.type === 'investment' && isEligible(b))
+)
 
 console.log(withdrawalBids)
 

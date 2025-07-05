@@ -33,7 +33,7 @@ const createWithdrawal = async () => {
         plan: plan.value,
         type: 'withdrawal',
         expected_return: Math.round(amt * 1.5),
-        status: "pending"
+        status: "pending",
       },
       { headers }
     )

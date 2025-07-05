@@ -115,11 +115,11 @@ async function joinAuctionRoom() {
   try {
     await axios.patch(userUrl, { is_auction_room: true }, { headers });
     isAuctionRoom.value = true;
-    toast.success("✅ You have successfully joined the auction room.");
+    toast.success(res.data.message || 'Joined auction room!');
   } catch (err) {
     hasClickedJoin.value = false;
     console.error("Failed to join auction room", err);
-    toast.error("Failed to join auction room.");
+    toast.success(err.response?.data?.message || 'Failed to join auction room');
   } finally {
     joiningAuction.value = false;
   }
